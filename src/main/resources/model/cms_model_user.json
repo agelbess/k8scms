@@ -1,0 +1,61 @@
+{
+  "database": "cms",
+  "collection": "user",
+  "fields": [
+    {
+      "id": true,
+      "name": "_id",
+      "type": "oid"
+    },
+    {
+      "name": "password",
+      "type": "secret1"
+    },
+    {
+      "name": "name"
+    },
+    {
+      "name": "securityRealm",
+      "regex": "^local|ldap$"
+    },
+    {
+      "name": "email",
+      "type": "email"
+    },
+    {
+      "name": "phone",
+      "type": "phone"
+    },
+    {
+      "name": "permissions",
+      "regex": "\\z|^.*:.*:.*$"
+    },
+    {
+      "name": "roles",
+      "type": "json"
+    },
+    {
+      "name": "rolesRelation",
+      "relation": "cms:role:{'name': { '$in': [{roles}] } }",
+      "type": "json"
+    }
+  ],
+  "indexes": [
+    {
+      "index": {
+        "name": 1
+      },
+      "options": {
+        "unique": true
+      }
+    },
+    {
+      "index": {
+        "email": 1
+      },
+      "options": {
+        "unique": true
+      }
+    }
+  ]
+}

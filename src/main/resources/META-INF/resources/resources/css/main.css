@@ -1,0 +1,151 @@
+body {
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+}
+
+#cms-loading {
+    width: 100%;
+    display: none;
+}
+
+.mdl-layout__header {
+    /* background-color: rgb(3,169,244); */
+    /* background-color: #03A9F4; */
+    color: white;
+}
+
+.mdl-layout__header-row .mdl-navigation__link {
+    color: white;
+}
+
+.mdl-layout__header .mdl-layout__drawer-button {
+    color: white;
+}
+
+#cms-header-header-title-fixed {
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.cms-margin-auto {
+    margin: auto
+}
+
+.cms-table-id {
+    font-style: oblique;
+}
+
+.cms-alert {
+    font-weight: bold;
+    color: red;
+}
+
+.cms-json {
+    text-align: left;
+    padding-left: 15px;
+}
+
+.cms-json > .material-icons {
+    font-size: initial;
+}
+
+.cms-json-expand, .cms-json-copy {
+    cursor: pointer;
+    color: rgb(68,138,255);
+}
+
+.cms-json-key {
+    color: red;
+}
+
+.cms-json-string {
+    color: green;
+}
+
+.cms-json-number {
+    color: darkorange;
+}
+
+.cms-json-boolean {
+    color: blue;
+}
+
+td .mdl-tooltip, th .mdl-tooltip {
+    max-width: inherit;
+}
+
+.cms-table-header-type .material-icons {
+    font-size: small;
+}
+
+.cms-table-tooltip-warn {
+    background-color: rgba(68,138,255, 0.9);
+    color: white;
+}
+
+.cms-table-header-sort {
+    font-size: medium;
+    padding-left: 5px;
+    bottom: -3px;
+    position: relative;
+    cursor: pointer;
+}
+
+.cms-table-header-sort-selected {
+    font-size: medium;
+    bottom: -6px;
+    position: relative;
+    cursor: pointer;
+}
+
+.cms-table-counters {
+    color: rgba(0, 0, 0, .54);
+    text-align: right;
+    white-space: nowrap;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.cms-table-counters .material-icons {
+    cursor: pointer;
+}
+
+.cms-table-counters-fromTo {
+    bottom: 7px;
+    position: relative;
+}
+
+.cms-table-header-action {
+}
+
+.cms-form-input .material-icons {
+    font-size: small;
+}
+
+.mdl-dialog {
+    min-width: 500px;
+}
+
+.cms-table-action {
+    cursor: pointer;
+}
+
+.cms-header-drawer-title {
+    color: #757575;
+    padding: 16px 40px;
+}
+
+.cms-table-grid {
+    overflow-x: auto;
+}
+
+.cms-table-query-expandable {
+    padding: 0px;
+}
+
+.mdl-textfield--expandable .mdl-button--icon {
+    top: 0px;
+}
+
+.mdl-textfield--expandable .mdl-textfield__input {
+    font-family: consolas, sans-serif;
+}

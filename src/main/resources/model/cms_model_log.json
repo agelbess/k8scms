@@ -1,0 +1,34 @@
+{
+  "database": "cms",
+  "collection": "log",
+  "fields": [
+    {
+      "id": true,
+      "name": "_id",
+      "type": "oid"
+    },
+    {
+      "name": "database"
+    },
+    {
+      "name": "collection"
+    },
+    {
+      "name": "method"
+    },
+    {
+      "name": "uri"
+    },
+    {
+      "name": "body",
+      "type": "json"
+    },
+    {
+      "name": "userName"
+    },
+    {
+      "name": "date",
+      "type": "date"
+    }
+  ]
+}
