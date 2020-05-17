@@ -20,6 +20,10 @@ is your second nature? try to rewrite the UI without breaking any API and UX bef
 
 Written entirely in Java 11.
 
+The UI looks like that.
+
+![overview](/assets/screenshot/k8scms_overview.png)
+
 ## Getting started
 
 * Dock MongoDB on Docker and do not forget to open the `27017` port on localhost
@@ -338,10 +342,38 @@ Sample query
 
     docker exec ldap_test_com ldapsearch -x -H ldap://localhost -b dc=test,dc=com -D "cn=admin,dc=test,dc=com" -w password
     
+## Screenshots
+
+The `cms.user` table
+
+![cms.user table](/assets/screenshot/k8scms_user.png)
+
+The upload page with the pre-persist validation
+
+![upload](/assets/screenshot/k8scms_upload.png)
+
+Pagination, sorting and querying
+
+![pagination validation quering](/assets/screenshot/k8scms_query_sort_pagination.png)
+
+Data validations and JSON view
+
+![validation and JSON](/assets/screenshot/k8scms_validations_json.png)
+
+Drawer
+
+![drawer](/assets/screenshot/k8scms_model_drawer.png)
+
+Logs
+
+![log](/assets/screenshot/k8scms_log.png)
+
+Download excel
+
+![log](/assets/screenshot/k8scms_download_excel.png)
+
 ## TODO
 
 * LDAP authentication has not been tested over TLS
 * The scheduling service needs some work. Documentation is also missing.
 * A dark theme for the UI
-    
-
