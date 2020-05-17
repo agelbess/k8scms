@@ -1,0 +1,34 @@
+{
+  "database": "cms",
+  "collection": "scheduler",
+  "fields": [
+    {
+      "id": true,
+      "name": "_id",
+      "type": "oid"
+    },
+    {
+      "name": "name"
+    },
+    {
+      "name": "on",
+      "type": "boolean"
+    },
+    {
+      "name": "batchSize",
+      "type": "integer"
+    },
+    {
+      "name": "schedulerTasks",
+      "relation": "cms:schedulerTask:{ 'schedulerName': {name} }",
+      "type": "json"
+    }
+  ],
+  "indexes": [
+    {
+      "index": {
+        "on": 1
+      }
+    }
+  ]
+}

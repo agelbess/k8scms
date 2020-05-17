@@ -1,0 +1,81 @@
+{
+  "database": "cms",
+  "collection": "schedulerTask",
+  "fields": [
+    {
+      "id": true,
+      "name": "_id",
+      "type": "oid"
+    },
+    {
+      "name": "schedulerName"
+    },
+    {
+      "name": "name"
+    },
+    {
+      "name": "on",
+      "type": "boolean"
+    },
+    {
+      "name": "cron",
+      "type": "cron"
+    },
+    {
+      "name": "priority",
+      "type": "integer"
+    },
+    {
+      "name": "running",
+      "type": "boolean"
+    },
+    {
+      "name": "maxSuccessCount",
+      "type": "integer"
+    },
+    {
+      "name": "successCount",
+      "type": "integer"
+    },
+    {
+      "name": "maxFailCount",
+      "type": "integer"
+    },
+    {
+      "name": "failCount",
+      "type": "integer"
+    },
+    {
+      "name": "http",
+      "type": "json",
+      "description": "json with: url, method, headers, body",
+      "json": {
+        "url": null,
+        "method": null,
+        "headers": null,
+        "body": null
+      }
+    },
+    {
+      "name": "other_task_type",
+      "type": "json"
+    },
+    {
+      "name": "lastFireDate",
+      "type": "date"
+    },
+    {
+      "name": "lastSuccess"
+    },
+    {
+      "name": "lastFail"
+    }
+  ],
+  "indexes": [
+    {
+      "index": {
+        "on": 1
+      }
+    }
+  ]
+}

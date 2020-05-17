@@ -1,0 +1,40 @@
+[
+  {
+    "boolean": false
+  },
+  {
+    "string": "string in json",
+    "number": 44.9,
+    "date": "2020-04-26T10:16:59.123Z",
+    "boolean": true,
+    "missing3": "missing",
+    "json": {
+      "text": "some text",
+      "number": 54,
+      "boolean": true,
+      "other json": {
+        "name": "alex",
+        "numeric_array": [
+          1,
+          3,
+          5
+        ],
+        "object array": [
+          {
+            "a1": 1
+          },
+          {
+            "a1": "hello"
+          },
+          {
+            "a2": 1
+          },
+          {
+            "a2": true
+          }
+        ]
+      }
+    },
+    "email": "alex@gelbessis.gr"
+  }
+]

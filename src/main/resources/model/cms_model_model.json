@@ -1,0 +1,36 @@
+{
+  "database": "cms",
+  "collection": "model",
+  "fields": [
+    {
+      "id": true,
+      "name": "_id",
+      "type": "oid"
+    },
+    {
+      "name": "database"
+    },
+    {
+      "name": "collection"
+    },
+    {
+      "name": "fields",
+      "type": "json"
+    },
+    {
+      "name": "indexes",
+      "type": "json"
+    }
+  ],
+  "indexes": [
+    {
+      "index": {
+        "database": 1,
+        "collection": 1
+      },
+      "options": {
+        "unique": true
+      }
+    }
+  ]
+}

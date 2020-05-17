@@ -1,0 +1,31 @@
+{
+  "database": "cms",
+  "collection": "role",
+  "fields": [
+    {
+      "id": true,
+      "name": "_id",
+      "type": "oid"
+    },
+    {
+      "name": "name"
+    },
+    {
+      "name": "permissions",
+      "regex": "\\z|^.*:.*:.*$"
+    },
+    {
+      "name": "description"
+    }
+  ],
+  "indexes": [
+    {
+      "index": {
+        "name": 1
+      },
+      "options": {
+        "unique": true
+      }
+    }
+  ]
+}
