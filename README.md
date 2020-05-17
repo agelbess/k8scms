@@ -1,3 +1,4 @@
+![logo](/assets/favicon.ico)
 # [K8sCMS](https://k8scms.com)
 
 ## Introduction
