@@ -146,7 +146,7 @@
                                     let field = $.cms.utils.findFieldByName(model.fields, headers[c].v);
                                     if (cell) {
                                         let value;
-                                        if (field && field.type === 'json') {
+                                        if (field && (field.type === 'json' || field.type === 'geoJson')) {
                                             try {
                                                 value = JSON.parse(cell.v);
                                             } catch (e) {

@@ -75,7 +75,7 @@ body {
 
 .cms-json-expand, .cms-json-copy {
     cursor: pointer;
-    color: rgb(68,138,255);
+    color: rgb(68, 138, 255);
 }
 
 .cms-json-key {
@@ -103,7 +103,7 @@ td .mdl-tooltip, th .mdl-tooltip {
 }
 
 .cms-table-tooltip-warn {
-    background-color: rgba(68,138,255, 0.9);
+    background-color: rgba(68, 138, 255, 0.9);
     color: white;
 }
 

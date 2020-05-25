@@ -84,6 +84,9 @@
                 case 'cron':
                     iconE = $('<span>').addClass('material-icons').text('access_alarm');
                     break;
+                case 'geoJson':
+                    iconE = $('<span>').addClass('material-icons').text('location_on');
+                    break;
                 default:
                     iconE = $('<span>').addClass('material-icons').text('text_format');
             }

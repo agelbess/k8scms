@@ -147,7 +147,22 @@ public class ModelUtils {
                     if (!((String) entry.getValue()).matches(Constants.REGEX_EMAIL)) {
                         addMetaValidationError(meta, field.getName(), "not email");
                     }
-
+                case Field.TYPE_GEO_JSON:
+                    // on upload check for Map
+                    if (!(entry.getValue() instanceof Map) && !(entry.getValue() instanceof Document) && !((entry.getValue()) instanceof List)) {
+                        addMetaValidationError(meta, field.getName(), "not geo json");
+                    }
+                    if (entry.getValue() instanceof Map) {
+                        Map<String, Object> entryEntry = (Map<String, Object>) entry.getValue();
+                        // e.g. { type: "Point", coordinates: [ 40, 5 ] }
+                        if (entryEntry.get("type") == null) {
+                            addMetaValidationError(meta, field.getName(), "geoJson is missing 'type'");
+                        }
+                        if (entryEntry.get("coordinates") == null) {
+                            addMetaValidationError(meta, field.getName(), "geoJson is missing 'coordinates'");
+                        }
+                    }
+                    break;
                 default:
                     // do nothing
             }
@@ -268,7 +283,6 @@ public class ModelUtils {
                             entry.setValue(Integer.parseInt(entry.getValue().toString()));
                         } catch (NumberFormatException e) {
                             // do nothing
-                            e.printStackTrace();
                         }
                         break;
                     case Field.TYPE_DECIMAL:

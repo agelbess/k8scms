@@ -42,7 +42,8 @@ public class Field {
     public static final String TYPE_PHONE = "phone";
     public static final String TYPE_SECRET1 = "secret1"; // one way encryption
     public static final String TYPE_SECRET2 = "secret2"; // two way encryption
-    public static final String TYPE_CRON = "cron"; // two way encryption
+    public static final String TYPE_CRON = "cron"; // cron expression
+    public static final String TYPE_GEO_JSON = "geoJson"; // GeoJSON
 
     public static final Field DEFAULT = new Field();
 

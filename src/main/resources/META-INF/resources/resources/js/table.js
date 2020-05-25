@@ -283,47 +283,60 @@
                                     .ca(model, 'DELETE');
                             }
 
-                        model.fields.forEach(f => {
-                            let value = o[f.name];
-                            let id = `cms-table-cell-${i}-${f.name}`;
-                            let dataE = $('<td>')
-                                .attr('id', id)
-                                .appendTo(rowE);
-                            let tooltip;
-                            if (value != null) {
-                                switch (f.type) {
-                                    case null:
-                                    case undefined:
-                                    case 'string':
-                                    case 'oid':
-                                    case 'date':
-                                    case 'integer':
-                                    case 'decimal':
-                                    case 'boolean':
-                                    case 'secret1':
-                                    case 'secret2':
-                                        dataE.text(value);
-                                        break;
-                                    case 'json':
-                                        try {
-                                            dataE.append($.cms.utils.dynamicJson(null, value, 0));
-                                        } catch (e) {
+                            model.fields.forEach(f => {
+                                let value = o[f.name];
+                                let id = `cms-table-cell-${i}-${f.name}`;
+                                let dataE = $('<td>')
+                                    .attr('id', id)
+                                    .addClass(`cms-table-cell-field-type-${f.type}`)
+                                    .appendTo(rowE);
+                                let tooltip;
+                                if (value != null) {
+                                    switch (f.type) {
+                                        case null:
+                                        case undefined:
+                                        case 'string':
+                                        case 'oid':
+                                        case 'date':
+                                        case 'integer':
+                                        case 'decimal':
+                                        case 'boolean':
+                                        case 'secret1':
+                                        case 'secret2':
                                             dataE.text(value);
-                                        }
-                                        break;
-                                    case 'email':
-                                        dataE.append($(`<a href="mailto:${value}">`).text(value));
-                                        break;
-                                    case 'phone':
-                                        dataE.append($(`<a href="tel:${value}">`).text(value));
-                                        break;
-                                    case 'cron':
-                                        dataE.text(value);
-                                        try {
-                                            tooltip = cronstrue.toString(value);
-                                        } catch (e) {
-                                            // errors are reported from server validations
-                                        }
+                                            break;
+                                        case 'json':
+                                            try {
+                                                dataE.append($.cms.utils.dynamicJson(null, value, 0));
+                                            } catch (e) {
+                                                dataE.text(value);
+                                            }
+                                            break;
+                                        case 'geoJson':
+                                            try {
+                                                dataE.append($.cms.utils.dynamicJson(null, value, 0));
+                                                if (value.type === 'Point' && Array.isArray(value.coordinates)) {
+                                                    let iconE = $('<span>').addClass('material-icons').text('location_on');
+                                                    let url = `https://www.google.com/maps/@${value.coordinates[0]},${value.coordinates[1]},15z`;
+                                                    let gMapsE = $('<a>').attr('href', url).attr('target', '_blank').append(iconE).appendTo(dataE);
+                                                }
+                                            } catch (e) {
+                                                dataE.text(value);
+                                            }
+                                            break;
+                                        case 'email':
+                                            dataE.append($(`<a href="mailto:${value}">`).text(value));
+                                            break;
+                                        case 'phone':
+                                            dataE.append($(`<a href="tel:${value}">`).text(value));
+                                            break;
+                                        case 'cron':
+                                            dataE.text(value);
+                                            try {
+                                                tooltip = cronstrue.toString(value);
+                                            } catch (e) {
+                                                // errors are reported from server validations
+                                            }
                                             break;
                                         default:
                                             $.cms.log.error(`invalid field type '${f.type}'`);
