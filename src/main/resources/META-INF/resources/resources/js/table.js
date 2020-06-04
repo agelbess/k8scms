@@ -34,10 +34,18 @@
             let contentE = $('<div>').addClass('mdl-grid cms-table-grid');
             let tableCellE = $('<div>').addClass('mdl-cell mdl-cell--12-col').appendTo(contentE);
 
-            const refresh = function (params) {
-                window.setTimeout(() => refresh_(params), 100);
+            const refresh = function () {
+                setTimeout(() => refresh_(), 100);
             }
-            const refresh_ = async function (params) {
+            let autoRefreshId;
+            const autoRefresh = function () {
+                clearInterval(autoRefreshId);
+                autoRefreshId = setInterval(() => refresh_(), 5000);
+            }
+            if ($.cms.utils.getHashParam('_autoRefresh')) {
+                autoRefresh();
+            }
+            const refresh_ = async function () {
                 let meta = await $.cms.api.getMeta(model);
                 let filter64 = $.cms.utils.getHashParam('filter');
                 let filter;
@@ -161,10 +169,23 @@
 
                     // table
                     let actionsHeaderE = $('<th>').appendTo(headerRowE);
-                    let reloadActionHeaderE = $('<span>')
+                    let refreshActionHeaderE = $('<span>')
                         .addClass('material-icons cms-table-action')
                         .text('refresh')
                         .on('click', refresh)
+                        .appendTo(actionsHeaderE);
+                    let autoRefreshHashParam = $.cms.utils.getHashParam('_autoRefresh');
+                    let autoRefreshActionHeaderE = $('<span>')
+                        .addClass('material-icons cms-table-action')
+                        .addClass(autoRefreshHashParam ? 'cms-button-on' : '')
+                        .text('sync')
+                        .on('click', () => {
+                            if (autoRefreshHashParam) {
+                                $.cms.utils.setHashParam('_autoRefresh', '');
+                            } else {
+                                $.cms.utils.setHashParam('_autoRefresh', true);
+                            }
+                        })
                         .appendTo(actionsHeaderE);
                     let createActionHeaderE = $('<span>')
                         .addClass('material-icons cms-table-action')

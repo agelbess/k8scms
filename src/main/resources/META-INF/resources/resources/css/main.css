@@ -174,3 +174,7 @@ td .mdl-tooltip, th .mdl-tooltip {
 .mdl-textfield--expandable .mdl-textfield__input {
     font-family: consolas, sans-serif;
 }
+
+.cms-button-on {
+    color: rgb(68, 138, 255);
+}
