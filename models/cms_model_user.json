@@ -1,6 +1,8 @@
 {
-  "database": "cms",
-  "collection": "user",
+  "cluster": "${cms.cluster}",
+  "database": "${cms.database}",
+  "collection": "${cms.collection-user}",
+  "name": "cms-user",
   "fields": [
     {
       "id": true,
@@ -28,22 +30,31 @@
     },
     {
       "name": "permissions",
-      "regex": "\\z|^.*:.*:.*$"
+      "type": "array"
     },
     {
       "name": "roles",
-      "type": "json"
+      "type": "array"
     },
     {
       "name": "rolesRelation",
-      "relation": "cms:role:{'name': { '$in': [{roles}] } }",
-      "type": "json"
+      "type": "array",
+      "relation": {
+        "cluster": "${cms.cluster}",
+        "database": "${cms.database}",
+        "collection": "${cms.collection-role}",
+        "filter": "{ 'name': { '$in': [{roles}] } }"
+      }
+    },
+    {
+      "name": "filters",
+      "type": "array"
     }
   ],
   "indexes": [
     {
       "index": {
-        "name": 1
+        "name": "1"
       },
       "options": {
         "unique": true
@@ -51,7 +62,7 @@
     },
     {
       "index": {
-        "email": 1
+        "email": "1"
       },
       "options": {
         "unique": true

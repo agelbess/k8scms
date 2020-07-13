@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
@@ -41,7 +38,9 @@
                 let headerE = $('#cms-header-header');
                 let rowE = $('<div>').addClass('mdl-layout__header-row').appendTo(headerE);
                 $('<img id="cms-header-header-logo" src="resources/image/favicon.ico">').addClass('mdl-layout-title').appendTo(rowE);
-                $('<span id="cms-header-header-title-fixed">K8sCMS</span>').addClass('mdl-layout-title').appendTo(rowE);
+                $('<span id="cms-header-header-title-fixed">')
+                    .text($.cms.context.resources.properties.projectName)
+                    .addClass('mdl-layout-title').appendTo(rowE);
                 $('<span id="cms-header-header-title"></span>').addClass('mdl-layout-title').appendTo(rowE);
                 $('<div>').addClass('mdl-layout-spacer').appendTo(rowE);
                 navE = $('<nav>').addClass('mdl-navigation mdl-layout--large-screen-only').appendTo(rowE);

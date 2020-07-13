@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
@@ -34,9 +31,10 @@
             resources.models = await $.cms.api.getModels();
             resources.userPermissions = resources.user.rolesRelation ? resources.user.rolesRelation.map(role => role.permissions) : [];
             resources.user.permissions ? resources.userPermissions.push(resources.user.permissions) : null;
-            if (resources.userPermissions.includes('.*:.*:.*')) {
-                $.cms.log.warn('you are a super user, do not use .*:.*:.* in prod');
+            if (resources.userPermissions.filter(p => p.cluster === '.*' && p.database === '.*' && p.collection === '.*' && p.method === '.*').length > 0) {
+                $.cms.log.warn('you are a super user, do not use .*:.*:.*:.* in prod');
             }
+            $('#cms-title').text(resources.properties.projectName);
             console.log('done init');
         }
 

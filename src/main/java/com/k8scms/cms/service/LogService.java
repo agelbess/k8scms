@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,12 +18,12 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.service;
 
 import com.k8scms.cms.CmsProperties;
+import com.k8scms.cms.model.Field;
 import com.k8scms.cms.mongo.MongoService;
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -47,11 +45,22 @@ public class LogService {
     MongoService mongoService;
 
     @Inject
+    ModelService modelService;
+
+    @Inject
     CmsProperties cmsProperties;
 
-    public void log(String database, String collection, String method, Document body, String userName, UriInfo uriInfo) {
-        if ((database + ":" + collection + ":" + method).matches(cmsProperties.getLog())) {
+    public void log(String cluster, String database, String collection, String method, Document body, String userName, UriInfo uriInfo) {
+        // do not log secrets
+        if (body != null) {
+            modelService.getModel(cluster, database, collection).getFields().stream()
+                    .filter(f -> f.getType().equals(Field.TYPE_SECRET1) || f.getType().equals(Field.TYPE_SECRET2))
+                    .forEach(field -> body.put(field.getName(), "********"));
+        }
+
+        if ((String.format("%s:%s:%s:%s", cluster, database, collection, method)).matches(cmsProperties.getLog())) {
             Document log = new Document();
+            log.put("cluster", cluster);
             log.put("database", database);
             log.put("collection", collection);
             log.put("method", method);
@@ -61,11 +70,12 @@ public class LogService {
             log.put("date", new Date());
             logger.info(log.toJson());
             mongoService.post(
+                    cmsProperties.getCluster(),
                     cmsProperties.getDatabase(),
                     cmsProperties.getCollectionLog(),
                     log)
                     .await()
-                    .atMost(cmsProperties.getMongoTimeoutDuration());
+                    .indefinitely();
         }
     }
 }

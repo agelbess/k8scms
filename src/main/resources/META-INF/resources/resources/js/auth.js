@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,56 +18,33 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
     const Constructor = function () {
 
-        const canAccess = function (database, collection, method) {
-            let permissions = $.cms.context.resources.userPermissions;
-            for (let permission of permissions) {
-                let tokens = permission.split(':');
-                if (
-                    (!database || database.match(tokens[0])) &&
-                    (!collection || collection.match(tokens[1])) &&
-                    (!method || method.match(tokens[2]))) {
+        const canAccess = function (model, method) {
+            let permissionsList = $.cms.context.resources.userPermissions;
+            for (let permissions of permissionsList) {
+                if (model.cluster.match(permissions.cluster) &&
+                    model.database.match(permissions.database) &&
+                    model.collection.match(permissions.collection) &&
+                    method.match(permissions.method)) {
                     return true;
                 }
             }
         }
 
-        const hide = function (eE, database, collection, method) {
-            if (!canAccess(database, collection, method)) {
-                eE.hide();
-            }
-        }
-
-        const remove = function (eE, database, collection, method) {
-            if (!canAccess(database, collection, method)) {
-                eE.remove();
-            }
-        }
-
-        const ca = function (database, collection, method) {
-            if (typeof database === 'string') {
-                if (!canAccess(database, collection, method)) {
-                    $(this).hide();
-                }
-            } else {
-                // shift the arguments
-                let model = database;
-                let method = collection;
-                if (!canAccess(model.database, model.collection, method)) {
-                    $(this).hide();
-                }
+        const caHide = function (model, method) {
+            if (!canAccess(model, method)) {
+                $(this).hide();
             }
             return $(this);
         }
 
         // register in $
         // can also be invoked as (model, method)
-        $.fn.ca = ca;
+        $.fn.caHide = caHide;
 
         return {
             canAccess: canAccess

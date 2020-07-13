@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
@@ -31,16 +28,14 @@
         const init = function () {
             console.debug('init collection');
 
-            let ca = $.cms.auth.canAccess;
-            let properties = $.cms.context.resources.properties;
-            let models = $.cms.context.resources.models;
+            let models = $.cms.context.resources.models.sort((a, b) => ('' + a.name).localeCompare(b.name));
 
             for (let model of models) {
-                ca(model.database, model.collection, 'GET') ?
+                if ($.cms.auth.canAccess(model, 'GET')) {
                     $.cms.header.appendDrawer(
-                        `${model.database}.${model.collection}`,
-                        `#COLLECTION&database=${model.database}&collection=${model.collection}`)
-                    : null;
+                        `${model.name}`,
+                        `#COLLECTION&cluster=${model.cluster}&database=${model.database}&collection=${model.collection}`);
+                }
             }
 
             let lastParams;
@@ -49,7 +44,7 @@
                 // hash.
                 // This is how the navigation of our app happens.
                 let params = $.cms.utils.getHashParams();
-                if (lastParams && !$.cms.utils.equal(params, lastParams)) {
+                if (Object.keys(params).includes('COLLECTION') && lastParams && !$.cms.utils.equal(params, lastParams)) {
                     start(params);
                 }
                 lastParams = params;
@@ -59,11 +54,13 @@
         const start = function (params) {
             console.debug('start collection');
             let rootE = $('#cms-collection').empty();
-            let model = $.cms.context.resources.models.filter(m => m.database === params.database && m.collection === params.collection).pop();
+            let model = $.cms.context.resources.models.filter(m => m.cluster === params.cluster && m.database === params.database && m.collection === params.collection).pop();
 
             table = $.cms.table.create(model);
             rootE.append(table.contentE);
-            $('#cms-header-header-title').text(`collection ${model.database}.${model.collection}`);
+            let title = `collection ${model.name}`;
+            $('#cms-header-header-title').text(title);
+            $('#cms-title').text(`${$.cms.context.resources.properties.projectName} ${title}`);
             table.refresh();
         }
 

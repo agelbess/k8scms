@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,17 +18,18 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.utils;
 
+import com.k8scms.cms.CmsProperties;
 import com.k8scms.cms.Constants;
 import com.k8scms.cms.SecretProperties;
 import com.k8scms.cms.model.GetOptions;
-import com.k8scms.cms.CmsProperties;
+import com.k8scms.cms.model.Permissions;
 import io.quarkus.security.UnauthorizedException;
 import org.bson.Document;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jasypt.util.text.BasicTextEncryptor;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -45,12 +44,17 @@ import javax.ws.rs.core.UriInfo;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Utils {
@@ -250,12 +254,12 @@ public class Utils {
         return "cn=" + tokens[0] + ",dc=" + String.join(",dc=", Arrays.asList(domainTokens));
     }
 
-    public static boolean hasPermission(String database, String collection, String method, List<String> permissions) {
-        for (String permission : permissions) {
-            String[] tokens = permission.split(":");
-            if (database.matches(tokens[0]) &&
-                    collection.matches(tokens[1]) &&
-                    method.matches(tokens[2])) {
+    public static boolean hasPermission(String cluster, String database, String collection, String method, List<Permissions> permissionsList) {
+        for (Permissions permissions : permissionsList) {
+            if (cluster.matches(permissions.getCluster()) &&
+                    database.matches(permissions.getDatabase()) &&
+                    collection.matches(permissions.getCollection()) &&
+                    method.matches(permissions.getMethod())) {
                 return true;
             }
         }
@@ -268,5 +272,27 @@ public class Utils {
         } else {
             return new UnauthorizedException(message);
         }
+    }
+
+    public static String replaceProperties(String text) {
+        return replaceProperties(text, (property) -> ConfigProvider.getConfig().getValue(property, String.class));
+    }
+
+    static String replaceProperties(String text, Function<String, String> supplier) {
+        Pattern pattern = Pattern.compile(Constants.REGEX_PROPERTIES_REPLACE);
+        Matcher matcher = pattern.matcher(text);
+        return matcher.replaceAll(matchResult -> {
+            String property = text.substring(matcher.start() + 2, matcher.end() - 1);
+            return supplier.apply(property);
+        });
+    }
+
+    public static boolean isCharset(String text, String charset) throws UnsupportedEncodingException {
+        return Charset.forName(charset).newEncoder().canEncode(text);
+    }
+
+    public static Document getUserFilter(String name) {
+        return new Document("name",
+                new Document("$regex", name).append("$options", "i"));
     }
 }

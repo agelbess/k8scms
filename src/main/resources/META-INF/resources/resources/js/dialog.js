@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
@@ -41,6 +38,14 @@
                     .text(action.label)
                     .on('click', action.action)
                     .appendTo(actionsE);
+                if (action.keyup) {
+                    dialogE.keyup((e) => {
+                        let code = e.key; // recommended to use e.key, it's normalized across devices and languages
+                        if (code === action.keyup.key) {
+                            action.action();
+                        }
+                    });
+                }
             }
 
             const show = function () {

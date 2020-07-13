@@ -5,7 +5,7 @@
 
 A headless CMS (with admin UI) featuring [MongoDB](https://mongodb.com) and [Quarkus](https://quarkus.io).
 
-NoSQL databases are ideal for creating generic Rest APIs on abstract data models. K8sCMS was developed based on that 
+NoSQL databases are ideal for creating generic Rest APIs on abstract data models. [K8sCMS](https://k8scms.com) was developed based on that 
 concept. 
 
 The power of Quarkus, simplified the development and minimised the development effort. 
@@ -22,7 +22,7 @@ Written entirely in Java 11.
 
 The UI looks like that.
 
-![overview](/assets/screenshot/k8scms_overview.png)
+![overview](/assets/screenshot/cms_overview.png)
 
 ## Getting started
 
@@ -35,7 +35,7 @@ to run [K8sCMS](https://k8scms.com)
     
 * Git clone
 
-      git clone https://github.com/agelbess/k8scms.git
+      git clone https://github.com/agelbess/[K8sCMS](https://k8scms.com).git
       
 * Run locally
 
@@ -308,27 +308,23 @@ Minimize the footprint of CPU and memory on your k8s cluster.
 
 ## Native compilation and docker
 
-Build native app
-
-    mvn clean package -Pnative -Dquarkus.native.container-runtime=docker
-    
 Build docker image
 
-    docker build -f src/main/docker/Dockerfile.native -t cms .
-    
+    docker build -f Dockerfile -t k8scms .
+
 Create Docker network for mongo and cms
 
 Create network
 
-    docker network create cms
+    docker network create k8scms.com
     
 Start mongo
 
-    docker run -p 27017:27017 --name mongo --net cms mongo
+    docker run -p 27017:27017 --name mongo --net k8scms mongo
     
 Start cms
 
-    docker run -i --rm -p 8080:8080 --name cms --net cms cms
+    docker run -i --rm -p 8080:8080 --name k8scms --net cms k8scms
    
 ### LDAP realm
 
@@ -346,31 +342,31 @@ Sample query
 
 The `cms.user` table
 
-![cms.user table](/assets/screenshot/k8scms_user.png)
+![cms.user table](/assets/screenshot/cms_user.png)
 
 The upload page with the pre-persist validation
 
-![upload](/assets/screenshot/k8scms_upload.png)
+![upload](/assets/screenshot/cms_upload.png)
 
 Pagination, sorting and querying
 
-![pagination validation quering](/assets/screenshot/k8scms_query_sort_pagination.png)
+![pagination validation quering](/assets/screenshot/cms_query_sort_pagination.png)
 
 Data validations and JSON view
 
-![validation and JSON](/assets/screenshot/k8scms_validations_json.png)
+![validation and JSON](/assets/screenshot/cms_validations_json.png)
 
 Drawer
 
-![drawer](/assets/screenshot/k8scms_model_drawer.png)
+![drawer](/assets/screenshot/cms_model_drawer.png)
 
 Logs
 
-![log](/assets/screenshot/k8scms_log.png)
+![log](/assets/screenshot/cms_log.png)
 
 Download excel
 
-![log](/assets/screenshot/k8scms_download_excel.png)
+![log](/assets/screenshot/cms_download_excel.png)
 
 ## TODO
 

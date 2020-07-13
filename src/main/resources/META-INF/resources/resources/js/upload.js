@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
@@ -32,11 +29,12 @@
         let json;
         let tableCellE;
         let uploadInputE;
+        let clusterInputE;
         let databaseInputE;
         let collectionInputE;
-        let updateSwitch;
+        let putSwitch;
+        let patchSwitch;
         let clearButtonE;
-        let postMessage = `creating documents on existing collections with an 'id' field can potentially generate duplication errors if the data contain 'id's`;
 
         const init = function () {
             console.debug('init upload');
@@ -49,24 +47,29 @@
                 .mdl()
                 .appendTo(uploadGridE);
             uploadInputE[0].addEventListener('change', handleFile, false);
-            databaseInputE = createTextField('cms-upload-database', 'database', $.cms.context.resources.properties.adminDatabase)
+            clusterInputE = createTextField('cms-upload-cluster', 'cluster', $.cms.context.resources.properties.cmsCluster)
+                .addClass('mdl-cell mdl-cell--12-col')
+                .appendTo(uploadGridE);
+            databaseInputE = createTextField('cms-upload-database', 'database', $.cms.context.resources.properties.cmsDatabase)
                 .addClass('mdl-cell mdl-cell--12-col')
                 .appendTo(uploadGridE);
             collectionInputE = createTextField('cms-upload-collection', 'collection')
                 .addClass('mdl-cell mdl-cell--12-col')
                 .appendTo(uploadGridE);
 
-            updateSwitch = createSwitch('cms-form-upload-update', 'update by id');
-            updateSwitch.labelE
+            putSwitch = createSwitch('cms-form-upload-put', 'replace(put) by id');
+            putSwitch.labelE
                 .addClass('mdl-cell mdl-cell--12-col')
                 .appendTo(uploadGridE);
-            updateSwitch.inputE.on('change', function () {
-                window.setTimeout(function () {
-                    if (updateSwitch.getValue()) {
-                        $.cms.log.info(`updating documents with 'id's that do not exist in the collection...`);
-                        $.cms.log.info(`...will NOT update them, the 'snackbar' contains the results`);
-                    }
-                })
+            putSwitch.inputE.on('change', function () {
+                patchSwitch.setValue(false);
+            });
+            patchSwitch = createSwitch('cms-form-upload-patch', 'update(patch) by id');
+            patchSwitch.labelE
+                .addClass('mdl-cell mdl-cell--12-col')
+                .appendTo(uploadGridE);
+            patchSwitch.inputE.on('change', function () {
+                putSwitch.setValue(false);
             });
             let postButtonE = $('<button>').addClass('mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--raised')
                 .addClass('mdl-cell mdl-cell--12-col')
@@ -84,7 +87,6 @@
             tableCellE = $('<div>').addClass('mdl-cell mdl-cell--10-col').appendTo(rootE);
 
             function handleFile(e) {
-                $.cms.log.info(postMessage);
                 let files = e.target.files;
                 let f = files[0];
                 if (f) {
@@ -98,6 +100,10 @@
                     } else if (filenameTokens.length === 2) {
                         databaseInputE.find('input').val(filenameTokens[0]);
                         collectionInputE.find('input').val(filenameTokens[1]);
+                    } else if (filenameTokens.length > 2) {
+                        clusterInputE.find('input').val(filenameTokens[0]);
+                        databaseInputE.find('input').val(filenameTokens[1]);
+                        collectionInputE.find('input').val(filenameTokens[2]);
                     }
 
                     // after setting the database and collection
@@ -138,31 +144,51 @@
                             }
                             let json = [];
                             let headers = rows[0];
+                            for (let h = 0; h < headers.length; h++) {
+                                if (!headers[h]) {
+                                    $.cms.log.warn(`header on index ${h + 1} is empty...'`);
+                                    $.cms.log.warn(`...all headers must have a proper field name value from the collection'`);
+                                    return;
+                                }
+                            }
+                            ;
                             for (let r = 1; r < rows.length; r++) {
                                 let jsonObject = {};
                                 let row = rows[r];
                                 for (let c = 0; c < row.length; c++) {
-                                    let cell = row[c];
-                                    let field = $.cms.utils.findFieldByName(model.fields, headers[c].v);
-                                    if (cell) {
-                                        let value;
-                                        if (field && (field.type === 'json' || field.type === 'geoJson')) {
-                                            try {
-                                                value = JSON.parse(cell.v);
-                                            } catch (e) {
+                                    if (row[c]) {
+                                        let cell = row[c];
+                                        let field = $.cms.utils.findFieldByName(model.fields, headers[c].v);
+                                        if (cell) {
+                                            let value;
+                                            if (field && (field.type === 'json' || field.type === 'array' || field.type === 'geoJson')) {
+                                                try {
+                                                    value = JSON.parse(cell.v);
+                                                } catch (e) {
+                                                    value = cell.v;
+                                                }
+                                            } else if (field && field.type === 'boolean') {
+                                                value = Boolean(cell.v);
+                                            }
+                                            // check for date and exclude the currency formats
+                                            else if (
+                                                cell.t === 'n'
+                                                && typeof cell.v === 'number'
+                                                && (cell.v + '') !== cell.w
+                                                // for double with formatting, e.g. v=35 w="35.00", or v=35.12345 w="35.12"
+                                                && cell.w.indexOf('.') === -1
+                                                && cell.w.indexOf('%') === -1
+                                                && cell.w.indexOf('$') === -1
+                                                && cell.w.indexOf('€') === -1) {
+                                                // value = {'$date': new Date((cell.v - 25569) * 86400 * 1000).toISOString()};
+                                                value = new Date((cell.v - 25569) * 86400 * 1000).toISOString();
+                                            } else if (cell.v && field && (field.type === undefined || field.type === 'string')) {
+                                                value = cell.v + '';
+                                            } else {
                                                 value = cell.v;
                                             }
-                                        } else if (field && field.type === 'boolean') {
-                                            value = Boolean(cell.v);
+                                            jsonObject[headers[c].v] = value;
                                         }
-                                        // check for date and exclude the currency formats
-                                        else if (cell.t === 'n' && typeof cell.v === 'number' && (cell.v + '') !== cell.w && cell.w.indexOf('%') === -1 && cell.w.indexOf('€') === -1) {
-                                            // value = {'$date': new Date((cell.v - 25569) * 86400 * 1000).toISOString()};
-                                            value = new Date((cell.v - 25569) * 86400 * 1000).toISOString();
-                                        } else {
-                                            value = cell.v;
-                                        }
-                                        jsonObject[headers[c].v] = value;
                                     }
                                 }
                                 json.push(jsonObject);
@@ -176,13 +202,12 @@
                     clear();
                 }
             }
-
         }
 
         const setJson = function (json) {
             that.json = json;
             let model = {...getModel()};
-            model.fields = [...model.fields];
+            model.fields = model.fields.filter(f => !f.relation && !f.virtual);
             if (!model.fields.length) {
                 let fieldNames = [];
                 let fields = [];
@@ -199,27 +224,32 @@
                 model.fields = fields;
                 $.cms.dialog.confirm({
                     timeout: 5000,
-                    message: `Model ${model.database}.${model.collection} is missing, create it?`,
+                    message: `Model ${model.cluster}.${model.database}.${model.collection} is missing, create it?`,
                     actionText: 'create it',
                     actionHandler: async () => {
                         let modelModel = {
+                            cluster: $.cms.context.resources.properties.cluster,
                             database: $.cms.context.resources.properties.database,
                             collection: $.cms.context.resources.properties.collectionModel
                         }
                         await $.cms.api.post(modelModel, model);
-                        $.cms.log.info(`generated model for ${model.database}.${model.collection}, please reload the page`);
+                        $.cms.log.info(`generated model for ${model.cluster}.${model.database}.${model.collection}, please reload the page`);
                     }
                 });
             } else {
                 model.fields.unshift({
                     name: '_json',
-                    label: '_json',
                     type: 'json'
                 });
-                $.cms.api.validate(model, json, (data) => {
+                model.fields.unshift({
+                    name: '_validationChanges',
+                    type: 'json'
+                });
+                $.cms.api.validateAndFindValidMethods(model, json, (data) => {
                     let dataCopy = [...data];
                     dataCopy.forEach((d, i) => {
                         d._json = json[i];
+                        d._validationChanges = d._meta.validationChanges;
                     });
                     let table = $.cms.table.create(model, dataCopy);
                     tableCellE.empty();
@@ -231,32 +261,56 @@
         }
 
         const postJson = async function () {
-            let post = !updateSwitch.getValue();
+            let method = 'post';
+            if (putSwitch.getValue()) {
+                method = 'put';
+            }
+            if (patchSwitch.getValue()) {
+                method = 'patch';
+            }
             let model = getModel();
             let fields = [];
             // to check for uniqueness
             let fieldsMap = {};
             let count = {
+                inserted: 0,
+                upserted: 0,
                 matched: 0,
                 modified: 0
             }
             $.cms.utils.loading();
             try {
-                for (let data of that.json) {
-                    // remove the meta
-                    if (post) {
+                let triggerCounter = 10;
+                $.cms.log.info(`uploading ${that.json.length}...`);
+                for (let i = 0; i < that.json.length; i++) {
+                    let data = that.json[i];
+                    if (that.json.length > triggerCounter - 1 && i > 0 && i % triggerCounter == 0) {
+                        $.cms.log.info(`...uploaded ${i} of ${that.json.length}`);
+                    }
+                    if (method === 'post') {
                         // POST returns void or throws errors
-                        await $.cms.api.post(model, data);
-                        count.modified++;
+                        let result = await $.cms.api.post(model, data);
+                        if (result.insertedId != null && result.insertedId != undefined) {
+                            count.inserted++;
+                        }
                     } else {
-                        // PUT, get the model already saved
+                        // PUT|PATCH
                         if (model.fields) {
-                            let idField = $.cms.utils.getIdField(model);
-                            if (idField) {
+                            let idFields = $.cms.utils.getIdFields(model);
+                            if (idFields.length) {
                                 // PUT contains result for updated records
-                                let result = await $.cms.api.put(model, data, {[idField.name]: data[idField.name]});
+                                let result;
+                                let filter = $.cms.utils.filterObject(data, idFields.map(f => f.name));
+                                if (method === 'put') {
+                                    result = await $.cms.api.put(model, data, filter);
+                                } else {
+                                    result = await $.cms.api.patch(model, data, filter);
+                                }
                                 count.matched += result.matchedCount;
                                 count.modified += result.modifiedCount;
+                                if (result.upsertedId !== null && result.upsertedId !== undefined) {
+                                    count.upserted++;
+                                }
                             } else {
                                 $.cms.log.info(`no 'id' field in model`);
                                 break;
@@ -267,14 +321,15 @@
                         }
                     }
                 }
+                $.cms.log.info(`...done uploading ${that.json.length}`);
             } finally {
-                if (post) {
-                    $.cms.log.info(`created ${count.modified}...`);
-                    $.cms.log.info(`... out of ${that.json.length} documents in ${model.database}.${model.collection}`);
-                } else {
-                    $.cms.log.info(`matched ${count.matched}, updated ${count.modified}...`);
-                    $.cms.log.info(`... out of ${that.json.length} documents in ${model.database}.${model.collection}`);
-                }
+                let message =
+                    `inserted ${count.inserted}, ` +
+                    `upserted ${count.upserted}, ` +
+                    `matched ${count.matched}, ` +
+                    `modified ${count.modified}`;
+                $.cms.log.info(message + '...')
+                $.cms.log.info(`... out of ${that.json.length} documents in ${model.cluster}.${model.database}.${model.collection}`);
                 $.cms.utils.loading(true);
                 clear();
             }
@@ -321,6 +376,10 @@
             }
         }
 
+        const getCluster = function () {
+            return clusterInputE.find('input').val();
+        }
+
         const getDatabase = function () {
             return databaseInputE.find('input').val();
         }
@@ -330,15 +389,17 @@
         }
 
         const getModel = function () {
+            let cluster = getCluster();
             let database = getDatabase();
             let collection = getCollection();
             let model = $.cms.context.resources.models.filter(
-                m => m.database === database && m.collection === collection
+                m => m.cluster === cluster && m.database === database && m.collection === collection
             ).pop();
             if (!model) {
                 model = {
-                    database: getDatabase(),
-                    collection: getCollection(),
+                    cluster: cluster,
+                    database: database,
+                    collection: collection,
                     fields: []
                 }
             }
@@ -348,24 +409,32 @@
         const start = function (params) {
             console.debug('start upload', params);
 
-            if (params.database || params.collection) {
+            if (params.cluster || params.database || params.collection) {
+                let cluster = clusterInputE.find('input');
                 let database = databaseInputE.find('input');
                 let collection = collectionInputE.find('input');
 
+                if (!cluster.val()) {
+                    cluster.val(params.cluster).mdlNot().mdl();
+                    clusterInputE.mdlNot().mdl();
+                }
                 if (!database.val()) {
                     database.val(params.database);
+                    databaseInputE.mdlNot().mdl();
                 }
                 if (!collection.val()) {
                     collection.val(params.collection);
+                    collectionInputE.mdlNot().mdl();
                 }
             }
         }
 
         const clear = function () {
-            uploadInputE.val(null);
+            uploadInputE.val('');
             tableCellE.empty();
-            databaseInputE.find('input').val(null);
-            collectionInputE.find('input').val(null);
+            clusterInputE.find('input').val('');
+            databaseInputE.find('input').val('');
+            collectionInputE.find('input').val('');
         }
 
         return {

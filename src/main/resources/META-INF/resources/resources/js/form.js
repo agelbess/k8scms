@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
@@ -31,9 +28,7 @@
 
             let contentE = $('<form>').addClass('mdl-grid');
             let inputs = {};
-            for (let i in model.fields) {
-                // skip oids (ids CAN me edited)
-                let field = model.fields[i];
+            for (let field of model.fields.filter(f => !f.relation && !f.virtual)) {
                 let input;
                 switch (field.type) {
                     case '$oid' :
@@ -44,9 +39,10 @@
                         input = createTextInput(model, field);
                         break;
                     case 'json':
+                    case 'array':
                         input = createJsonInput(model, field);
                         break;
-                    case 'number':
+                    case 'integer':
                     case 'decimal':
                         input = createNumberInput(model, field);
                         break;
@@ -60,8 +56,14 @@
                     case 'secret2':
                         input = createTextInput(model, field);
                         break;
+                    case 'phone':
+                        input = createTextInput(model, field, '^[0-9\\s+-\\.]*$');
+                        break;
+                    case 'email':
+                        input = createTextInput(model, field, '(?:[a-z0-9!#$%&\'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&\'*+/=?^_`{|}~-]+)*|\"(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])');
+                        break;
                     default:
-                        input = createTextInput(model, field);
+                        input = createTextInput(model, field, field.regex);
                 }
                 inputs[field.name] = input;
                 input.labelE.append($.cms.utils.getFieldIcon(field))
@@ -73,7 +75,7 @@
 
             const getValues = function () {
                 let data = {};
-                for (let field of model.fields) {
+                for (let field of model.fields.filter(f => !f.relation && !f.virtual)) {
                     let value = inputs[field.name].getValue();
                     if (value != null) {
                         data[field.name] = value;
@@ -83,7 +85,7 @@
             }
 
             const setValues = function (values) {
-                for (let field of model.fields) {
+                for (let field of model.fields.filter(f => !f.relation && !f.virtual)) {
                     inputs[field.name].setValue(values[field.name]);
                 }
             }
@@ -107,7 +109,7 @@
             return form;
         }
 
-        const createTextInput = function (model, field) {
+        const createTextInput = function (model, field, pattern) {
             let divE = $('<div>').addClass('mdl-textfield mdl-js-textfield mdl-textfield--floating-label').mdl();
             let id = `cms-form-${model.collection}-${field.name}`;
             let inputE = $('<input type="text">')
@@ -120,8 +122,15 @@
             let labelE = $('<label>')
                 .attr('for', id)
                 .addClass('mdl-textfield__label')
-                .text(field.name)
+                .text(field.label || field.name)
                 .appendTo(divE);
+            if (pattern) {
+                inputE.attr('pattern', pattern);
+                let spanE = $('<span>')
+                    .addClass('mdl-textfield__error')
+                    .text(`input does not match '${pattern.length > 20 ? pattern.substring(0, 30) + '...' : pattern}'`)
+                    .appendTo(divE);
+            }
 
             const getValue = function () {
                 let inputValue = inputE.val();
@@ -154,7 +163,7 @@
             let labelE = $('<label>')
                 .attr('for', id)
                 .addClass('mdl-textfield__label')
-                .text(field.name)
+                .text(field.label || field.name)
                 .appendTo(divE);
             let spanE = $('<span>')
                 .addClass('mdl-textfield__error')
@@ -193,7 +202,7 @@
             let labelE = $('<label>')
                 .attr('for', id)
                 .addClass('mdl-textfield__label')
-                .text(field.name)
+                .text(field.label || field.name)
                 .appendTo(divE);
 
             const getValue = function () {
@@ -233,7 +242,7 @@
                 .attr('id', id)
                 .addClass('mdl-switch__input')
                 .appendTo(labelE);
-            let spanE = $('<div>').addClass('mdl-switch__label').text(field.name).appendTo(labelE);
+            let spanE = $('<div>').addClass('mdl-switch__label').text(field.label || field.name).appendTo(labelE);
 
             const getValue = function () {
                 return labelE.hasClass('is-checked');

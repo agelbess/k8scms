@@ -1,6 +1,8 @@
 {
-  "database": "cms",
-  "collection": "role",
+  "cluster": "${cms.cluster}",
+  "database": "${cms.database}",
+  "collection": "${cms.collection-role}",
+  "name": "cms-role",
   "fields": [
     {
       "id": true,
@@ -12,7 +14,11 @@
     },
     {
       "name": "permissions",
-      "regex": "\\z|^.*:.*:.*$"
+      "type": "array"
+    },
+    {
+      "name": "filters",
+      "type": "array"
     },
     {
       "name": "description"
@@ -21,7 +27,7 @@
   "indexes": [
     {
       "index": {
-        "name": 1
+        "name": "1"
       },
       "options": {
         "unique": true

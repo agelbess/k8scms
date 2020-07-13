@@ -1,11 +1,16 @@
 {
-  "database": "cms",
-  "collection": "log",
+  "cluster": "${cms.cluster}",
+  "database": "${cms.database}",
+  "collection": "${cms.collection-log}",
+  "name": "cms-log",
   "fields": [
     {
       "id": true,
       "name": "_id",
       "type": "oid"
+    },
+    {
+      "name": "cluster"
     },
     {
       "name": "database"

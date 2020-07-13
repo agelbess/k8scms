@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,15 +18,16 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.filter;
 
-import com.k8scms.cms.model.GetOptions;
 import com.k8scms.cms.CmsProperties;
 import com.k8scms.cms.Constants;
 import com.k8scms.cms.SecretProperties;
+import com.k8scms.cms.model.Filter;
+import com.k8scms.cms.model.GetOptions;
+import com.k8scms.cms.model.Permissions;
 import com.k8scms.cms.mongo.MongoService;
 import com.k8scms.cms.utils.Utils;
 import org.bson.Document;
@@ -52,7 +51,7 @@ import java.util.stream.Collectors;
 @ApiLocalAuthenticationFilter
 public class ApiLocalAuthentication implements ContainerRequestFilter {
 
-    private static final Logger log = LoggerFactory.getLogger(ApiLocalAuthentication.class);
+    private static final Logger logger = LoggerFactory.getLogger(ApiLocalAuthentication.class);
 
     @Inject
     CmsProperties cmsProperties;
@@ -67,18 +66,17 @@ public class ApiLocalAuthentication implements ContainerRequestFilter {
     public void filter(ContainerRequestContext containerRequestContext) {
         String[] userNamePass = getBasicAuthUserPass(containerRequestContext);
         if (userNamePass != null) {
-            Document userFilter = new Document();
-            userFilter.put("name", userNamePass[0]);
             GetOptions getOptions = new GetOptions();
             getOptions.setLimit(1);
             Document user = mongoService.get(
+                    cmsProperties.getCluster(),
                     cmsProperties.getDatabase(),
                     cmsProperties.getCollectionUser(),
-                    userFilter,
+                    Utils.getUserFilter(userNamePass[0]),
                     getOptions)
                     .toUni()
                     .await()
-                    .atMost(cmsProperties.getMongoTimeoutDuration());
+                    .indefinitely();
             String securityRealm = user.getString("securityRealm");
             switch (securityRealm) {
                 case Constants.SECURITY_REALM_LOCAL:
@@ -114,21 +112,20 @@ public class ApiLocalAuthentication implements ContainerRequestFilter {
                     throw Utils.generateUnauthorizedException("Cookie timed out", cmsProperties.getEnv());
                 }
                 Document decryptedUser = Document.parse(Utils.decrypt2(encryptedUser, secretProperties.getSessionEncryptionKey() + "." + random));
-                log.debug("Decrypted user from cookie: {}", decryptedUser);
-                Document userFilter = new Document();
-                userFilter.put("name", decryptedUser.getString("name"));
+                logger.trace("Decrypted user from cookie: {}", decryptedUser);
                 GetOptions getOptions = new GetOptions();
                 getOptions.setLimit(1);
                 Document user = mongoService.get(
+                        cmsProperties.getCluster(),
                         cmsProperties.getDatabase(),
                         cmsProperties.getCollectionUser(),
-                        userFilter,
+                        Utils.getUserFilter(decryptedUser.getString("name")),
                         getOptions)
                         .toUni()
                         .await()
-                        .atMost(cmsProperties.getMongoTimeoutDuration());
+                        .indefinitely();
                 if (user == null) {
-                    throw Utils.generateUnauthorizedException(String.format("User %s not found in %s.%s", decryptedUser.get("name"), cmsProperties.getDatabase(), cmsProperties.getCollectionUser()), cmsProperties.getEnv());
+                    throw Utils.generateUnauthorizedException(String.format("User %s not found in %s.%s.%s", decryptedUser.get("name"), cmsProperties.getCluster(), cmsProperties.getDatabase(), cmsProperties.getCollectionUser()), cmsProperties.getEnv());
                 }
                 initContext(user, containerRequestContext);
             }
@@ -143,16 +140,32 @@ public class ApiLocalAuthentication implements ContainerRequestFilter {
         inFilter.put("$in", user.get("roles") != null ? user.get("roles") : new ArrayList<>());
         Document rolesFilter = new Document();
         rolesFilter.put("name", inFilter);
-        List<Document> roles = mongoService.get(cmsProperties.getDatabase(), cmsProperties.getCollectionRole(), rolesFilter)
+        List<Document> roles = mongoService.get(cmsProperties.getCluster(), cmsProperties.getDatabase(), cmsProperties.getCollectionRole(), rolesFilter)
                 .collectItems().asList()
                 .await()
-                .atMost(cmsProperties.getMongoTimeoutDuration());
+                .indefinitely();
         containerRequestContext.setProperty(Constants.CONTEXT_PROPERTY_USER_ROLES, roles);
 
-        List<String> permissions = roles.stream().map(document -> document.getString("permissions")).collect(Collectors.toList());
+        List<Permissions> permissions = roles.stream()
+                .map(document -> document.getList("permissions", Document.class))
+                .flatMap(List::stream)
+                .map(Permissions::new)
+                .collect(Collectors.toList());
         // add the user defined permissions
-        Optional.ofNullable(user.getString("permissions")).ifPresent(p -> permissions.add(p));
+        Optional.ofNullable(user.getList("permissions", Document.class))
+                .ifPresent(documents -> documents.forEach(document -> permissions.add(new Permissions(document))));
         containerRequestContext.setProperty(Constants.CONTEXT_PROPERTY_USER_PERMISSIONS, permissions);
+
+        List<Filter> filters = roles.stream()
+                .map(document -> document.getList("filters", Document.class))
+                .filter(Objects::nonNull)
+                .flatMap(List::stream)
+                .map(Filter::new)
+                .collect(Collectors.toList());
+        // add the user defined permissions
+        Optional.ofNullable(user.getList("filters", Document.class))
+                .ifPresent(documents -> documents.forEach(document -> filters.add(new Filter(document))));
+        containerRequestContext.setProperty(Constants.CONTEXT_PROPERTY_USER_FILTERS, filters);
     }
 
     public static String[] getBasicAuthUserPass(ContainerRequestContext containerRequestContext) {
@@ -169,4 +182,5 @@ public class ApiLocalAuthentication implements ContainerRequestFilter {
             return values;
         }
     }
+
 }

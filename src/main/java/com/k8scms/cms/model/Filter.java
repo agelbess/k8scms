@@ -1,4 +1,3 @@
-
 /*
  * MIT License
  * Copyright (c) 2020 Alexandros Gelbessis
@@ -23,50 +22,54 @@
 
 package com.k8scms.cms.model;
 
-public class MethodResult {
-    private Long modifiedCount;
-    private Long deleteCount;
-    private Long matchedCount;
-    private String insertedId;
-    private String upsertedId;
+import org.bson.Document;
 
-    public Long getModifiedCount() {
-        return modifiedCount;
+public class Filter {
+    private String cluster;
+    private String database;
+    private String collection;
+    private Document filter;
+
+    public Filter() {
     }
 
-    public void setModifiedCount(Long modifiedCount) {
-        this.modifiedCount = modifiedCount;
+
+    public Filter(Document document) {
+        cluster = document.getString("cluster");
+        database = document.getString("database");
+        collection = document.getString("collection");
+        filter = document.get("filter", Document.class);
     }
 
-    public Long getDeleteCount() {
-        return deleteCount;
+    public String getCluster() {
+        return cluster;
     }
 
-    public void setDeleteCount(Long deleteCount) {
-        this.deleteCount = deleteCount;
+    public void setCluster(String cluster) {
+        this.cluster = cluster;
     }
 
-    public Long getMatchedCount() {
-        return matchedCount;
+    public String getDatabase() {
+        return database;
     }
 
-    public void setMatchedCount(Long matchedCount) {
-        this.matchedCount = matchedCount;
+    public void setDatabase(String database) {
+        this.database = database;
     }
 
-    public String getInsertedId() {
-        return insertedId;
+    public String getCollection() {
+        return collection;
     }
 
-    public void setInsertedId(String insertedId) {
-        this.insertedId = insertedId;
+    public void setCollection(String collection) {
+        this.collection = collection;
     }
 
-    public String getUpsertedId() {
-        return upsertedId;
+    public Document getFilter() {
+        return filter;
     }
 
-    public void setUpsertedId(String upsertedId) {
-        this.upsertedId = upsertedId;
+    public void setFilter(Document filter) {
+        this.filter = filter;
     }
 }
