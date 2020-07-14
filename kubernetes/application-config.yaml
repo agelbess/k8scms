@@ -1,0 +1,47 @@
+apiVersion: v1
+data:
+  application.properties: |-
+    quarkus.mongodb.connection-string=mongodb://user:pass@35.202.214.44:27017
+    cms.project-name=k8scms
+
+    # dev|test|prod
+    cms.env=dev
+    cms.error-contact=alexandros@gelbessis.gr
+    cms.limit=1000
+    cms.page-size=10
+    cms.models-path=models
+
+    cms.cluster=cms
+    cms.cluster-0=cms,mongodb://user:pass@35.202.214.44:27017
+    # the collection for the models
+    cms.collection-model=cms-model
+    # the collection for the users
+    cms.collection-user=cms-user
+    # the collection for the roles
+    cms.collection-role=cms-role
+    cms.collection-log=cms-log
+    cms.log=^(.*:.*:(?!${cms.collection-log})(.*):(PUT|PATCH|POST|DELETE))$|^(testDB:.*:DELETE)$
+
+    cms.scheduler.model-service.every=10s
+
+    cms.mongo-timeout=10
+
+    secret.session-encryption-key=changeit-session
+    secret.secret-encryption-key=changeit-password
+    # session timeout of the user in seconds
+    secret.session-timeout=28800
+    # secret.ldap-url=ldap://localhost:636
+    secret.ldap-url=ldap://localhost:389
+    # secret.ldap-protocol=ssl
+    secret.ldap-authentication=simple
+    secret.ldap-admin-username=admin
+    secret.ldap-admin-password=password
+
+    quarkus.log.level=INFO
+    quarkus.log.category."com.k8scms.cms".level=DEBUG
+    quarkus.resteasy.gzip.enabled=true
+kind: ConfigMap
+metadata:
+  labels:
+    app: k8scms
+  name: application-config-k8scms

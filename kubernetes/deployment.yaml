@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: k8scms
+  name: k8scms
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: k8scms
+  template:
+    metadata:
+      labels:
+        app: k8scms
+    spec:
+      containers:
+      - name: application
+        image: gcr.io/k8scms/k8scms:v0.2.0
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health/live
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 20
+          successThreshold: 1
+          timeoutSeconds: 10
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health/ready
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30
+        ports:
+          - containerPort: 8080
+            name: http
+        volumeMounts:
+        - mountPath: /deployments/config
+          name: application-config-k8scms
+      volumes:
+      - name: application-config-k8scms
+        configMap:
+          name: application-config-k8scms
