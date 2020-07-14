@@ -30,7 +30,7 @@
             resources.properties = await $.cms.api.getProperties();
             resources.models = await $.cms.api.getModels();
             resources.userPermissions = resources.user.rolesRelation ? resources.user.rolesRelation.map(role => role.permissions) : [];
-            resources.user.permissions ? resources.userPermissions.push(resources.user.permissions) : null;
+            resources.user.permissions ? resources.userPermissions = resources.userPermissions.concat(resources.user.permissions) : null;
             if (resources.userPermissions.filter(p => p.cluster === '.*' && p.database === '.*' && p.collection === '.*' && p.method === '.*').length > 0) {
                 $.cms.log.warn('you are a super user, do not use .*:.*:.*:.* in prod');
             }

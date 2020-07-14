@@ -293,6 +293,6 @@ public class Utils {
 
     public static Document getUserFilter(String name) {
         return new Document("name",
-                new Document("$regex", name).append("$options", "i"));
+                new Document("$regex", String.format("^%s$", name)).append("$options", "i"));
     }
 }
