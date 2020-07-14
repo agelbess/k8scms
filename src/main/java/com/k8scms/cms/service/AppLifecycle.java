@@ -84,13 +84,20 @@ public class AppLifecycle {
                             String modelText = String.join("", readAllLines(path));
                             String replaceProperties = Utils.replaceProperties(modelText);
                             Document model = Document.parse(replaceProperties);
+                            String cluster = model.getString("cluster");
+                            String database = model.getString("database");
+                            String collection = model.getString("collection");
+                            log.debug("Upserting model {}:{}:{}",
+                                    cluster,
+                                    database,
+                                    collection);
                             mongoService.put(
                                     cmsProperties.getCluster(),
                                     cmsProperties.getDatabase(),
                                     cmsProperties.getCollectionModel(),
-                                    new Document("cluster", model.getString("cluster"))
-                                            .append("database", model.getString("database"))
-                                            .append("collection", model.getString("collection")),
+                                    new Document("cluster", cluster)
+                                            .append("database", database)
+                                            .append("collection", collection),
                                     model,
                                     true
                             ).await().indefinitely();
