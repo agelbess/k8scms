@@ -34,7 +34,7 @@
             if (resources.userPermissions.filter(p => p.cluster === '.*' && p.database === '.*' && p.collection === '.*' && p.method === '.*').length > 0) {
                 $.cms.log.warn('you are a super user, do not use .*:.*:.*:.* in prod');
             }
-            $('#cms-title').text(resources.properties.projectName);
+            $('#cms-title').text(resources.properties.projectName + ' throfilou');
             console.log('done init');
         }
 
