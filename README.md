@@ -311,6 +311,8 @@ Minimize the footprint of CPU and memory on your k8s cluster.
 Build docker image
 
     docker build -f Dockerfile -t k8scms .
+    docker build -t gcr.io/k8scms/k8scms:v0.2.0 .
+    docker push gcr.io/k8scms/k8scms:v0.2.0
 
 Create Docker network for mongo and cms
 
