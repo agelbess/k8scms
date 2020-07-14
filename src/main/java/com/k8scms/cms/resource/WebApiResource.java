@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 @Path(Constants.BASE_PATH_WEB_API)
 public class WebApiResource {
 
-    private static final Logger log = LoggerFactory.getLogger(WebApiResource.class);
+    private static final Logger log = LoggerFactory.getLogger(com.k8scms.cms.resource.WebApiResource.class);
 
     @Inject
     CmsProperties cmsProperties;
@@ -88,7 +88,8 @@ public class WebApiResource {
         Model model = modelService.getModel(cmsProperties.getCluster(), cmsProperties.getDatabase(), cmsProperties.getCollectionUser());
 
         ModelUtils.addRelations(user, model, mongoService);
-        ModelUtils.toWire(user, model, secretProperties);
+        ModelUtils.toWire(user, model);
+        ModelUtils.encryptSecrets(user, model, secretProperties);
         return user;
     }
 
@@ -151,8 +152,8 @@ public class WebApiResource {
     @Path("{database}/{collection}/validate")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Document> validate(
-            @PathParam(ApiResource.PATH_PARAM_DATABASE) String database,
-            @PathParam(ApiResource.PATH_PARAM_COLLECTION) String collection,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_DATABASE) String database,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_COLLECTION) String collection,
             Document data) {
         return validate(cmsProperties.getCluster(), database, collection, data);
     }
@@ -161,19 +162,19 @@ public class WebApiResource {
     @Path("{cluster}/{database}/{collection}/validate")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Document> validate(
-            @PathParam(ApiResource.PATH_PARAM_CLUSTER) String cluster,
-            @PathParam(ApiResource.PATH_PARAM_DATABASE) String database,
-            @PathParam(ApiResource.PATH_PARAM_COLLECTION) String collection,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_CLUSTER) String cluster,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_DATABASE) String database,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_COLLECTION) String collection,
             Document data) {
         log.debug("POST {}", uriInfo.getRequestUri());
 
         Model model = modelService.getModel(cluster, database, collection);
         List<Document> documents = data.getList("data", HashMap.class).stream()
-                .map(map -> ModelUtils.fromWire(new Document(map), model, secretProperties))
+                .map(map -> ModelUtils.fromWire(new Document(map), model))
                 .collect(Collectors.toList());
         ModelUtils.validate(documents, model);
         return documents.stream()
-                .map(document -> ModelUtils.toWire(document, model, secretProperties))
+                .map(document -> ModelUtils.toWire(document, model))
                 .collect(Collectors.toList());
     }
 
@@ -181,20 +182,20 @@ public class WebApiResource {
     @Path("{cluster}/{database}/{collection}/validateAndFindValidMethods")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Document> validateAndFindValidMethods(
-            @PathParam(ApiResource.PATH_PARAM_CLUSTER) String cluster,
-            @PathParam(ApiResource.PATH_PARAM_DATABASE) String database,
-            @PathParam(ApiResource.PATH_PARAM_COLLECTION) String collection,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_CLUSTER) String cluster,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_DATABASE) String database,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_COLLECTION) String collection,
             Document data) {
         log.debug("POST {}", uriInfo.getRequestUri());
 
         Model model = modelService.getModel(cluster, database, collection);
         List<Document> documents = data.getList("data", HashMap.class).stream()
-                .map(map -> ModelUtils.fromWire(new Document(map), model, secretProperties))
+                .map(map -> ModelUtils.fromWire(new Document(map), model))
                 .collect(Collectors.toList());
         ModelUtils.validate(documents, model);
-        ModelUtils.findValidationChanges(mongoService, documents, model);
+        ModelUtils.findValidationChanges(mongoService, documents, model, secretProperties);
         documents = documents.stream()
-                .map(document -> ModelUtils.toWire(document, model, secretProperties))
+                .map(document -> ModelUtils.toWire(document, model))
                 .collect(Collectors.toList());
         return documents;
     }

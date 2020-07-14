@@ -114,7 +114,7 @@ public class ApiResource {
         Model model = modelService.getModel(cluster, database, collection);
         Document filter = Utils.filterFromUriInfo(uriInfo);
         applyUserFilters(httpRequest, cluster, database, collection, filter);
-        ModelUtils.fromWire(filter, model, secretProperties);
+        ModelUtils.fromWire(filter, model);
 
         GetOptions getOptions = Utils.getOptionsFromUriInfo(uriInfo);
         // do not nest mongo reactive flows, first block to get the data and next execute other mongo flows that block
@@ -122,7 +122,9 @@ public class ApiResource {
         ModelUtils.validate(documents, model);
         documents = documents.stream()
                 .map(document -> ModelUtils.addRelations(document, model, mongoService))
-                .map(document -> ModelUtils.toWire(document, model, secretProperties)).collect(Collectors.toList());
+                .map(document -> ModelUtils.toWire(document, model))
+                .map(document -> ModelUtils.decryptSecrets(document, model, secretProperties))
+                .collect(Collectors.toList());
         sortMeta(getOptions, documents);
         return documents;
     }
@@ -189,7 +191,8 @@ public class ApiResource {
         log.debug("POST {}", uriInfo.getRequestUri());
 
         Model model = modelService.getModel(cluster, database, collection);
-        ModelUtils.fromWire(data, model, secretProperties);
+        ModelUtils.fromWire(data, model);
+        ModelUtils.encryptSecrets(data, model, secretProperties);
 
         return mongoService.post(cluster, database, collection, data).map(insertOneResult -> {
                     MethodResult methodResult = new MethodResult();
@@ -239,7 +242,7 @@ public class ApiResource {
         Model model = modelService.getModel(cluster, database, collection);
         Document filter = Utils.filterFromDocument(filterWithGetOptions);
         applyUserFilters(httpRequest, cluster, database, collection, filter);
-        ModelUtils.fromWire(filter, model, secretProperties);
+        ModelUtils.fromWire(filter, model);
 
         GetOptions getOptions = Utils.getOptionsFromDocument(filterWithGetOptions);
         // do not nest mongo reactive flows, first block to get the data and next execute other mongo flows that block
@@ -247,7 +250,8 @@ public class ApiResource {
         ModelUtils.validate(documents, model);
         documents = documents.stream()
                 .map(document -> ModelUtils.addRelations(document, model, mongoService))
-                .map(document -> ModelUtils.toWire(document, model, secretProperties))
+                .map(document -> ModelUtils.toWire(document, model))
+                .map(document -> ModelUtils.decryptSecrets(document, model, secretProperties))
                 .collect(Collectors.toList());
         sortMeta(getOptions, documents);
         return documents;
@@ -286,10 +290,11 @@ public class ApiResource {
         log.debug("PUT {}", uriInfo.getRequestUri());
 
         Model model = modelService.getModel(cluster, database, collection);
-        ModelUtils.fromWire(data, model, secretProperties);
+        ModelUtils.fromWire(data, model);
+        ModelUtils.encryptSecrets(data, model, secretProperties);
         Document filter = Utils.filterFromUriInfo(uriInfo);
         applyUserFilters(httpRequest, cluster, database, collection, filter);
-        ModelUtils.fromWire(filter, model, secretProperties);
+        ModelUtils.fromWire(filter, model);
 
         return mongoService.put(cluster, database, collection, filter, data, true).map(updateResult -> {
             MethodResult methodResult = new MethodResult();
@@ -338,10 +343,11 @@ public class ApiResource {
         log.debug("PATCH {}", uriInfo.getRequestUri());
 
         Model model = modelService.getModel(cluster, database, collection);
-        ModelUtils.fromWire(data, model, secretProperties);
+        ModelUtils.fromWire(data, model);
+        ModelUtils.encryptSecrets(data, model, secretProperties);
         Document filter = Utils.filterFromUriInfo(uriInfo);
         applyUserFilters(httpRequest, cluster, database, collection, filter);
-        ModelUtils.fromWire(filter, model, secretProperties);
+        ModelUtils.fromWire(filter, model);
 
         return mongoService.patch(cluster, database, collection, filter, data, true).map(updateResult -> {
             MethodResult methodResult = new MethodResult();
@@ -386,7 +392,7 @@ public class ApiResource {
         Model model = modelService.getModel(cluster, database, collection);
         Document filter = Utils.filterFromUriInfo(uriInfo);
         applyUserFilters(httpRequest, cluster, database, collection, filter);
-        ModelUtils.fromWire( filter , model, secretProperties);
+        ModelUtils.fromWire(filter, model);
 
         return mongoService.delete(cluster, database, collection, filter).map(deleteResult -> {
             MethodResult methodResult = new MethodResult();

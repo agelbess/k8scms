@@ -70,9 +70,7 @@ public class ModelUtils {
     private static Map<String, Object> filterDocument(Document document, List<Field> fields) {
         Map<String, Object> result = new HashMap<>();
         for (Field field : fields) {
-            if (document.containsKey(field.getName())) {
-                result.put(field.getName(), document.get(field.getName()));
-            }
+            result.put(field.getName(), document.get(field.getName()));
         }
         return result;
     }
@@ -93,7 +91,7 @@ public class ModelUtils {
             ids.add(documentIds);
         }
         for (Map.Entry<String, Object> entry : document.entrySet()) {
-            Field field = ModelUtils.findField(model, entry.getKey());
+            Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
             // check regex
             if (field.getRegex() != null) {
                 // use it also check for empty strings and nulls with the '\z' option
@@ -124,10 +122,10 @@ public class ModelUtils {
                     return field.getRequired() && field.getRelation() == null && field.getVirtual() == null;
                 })
                 .forEach(field -> {
-            if (document.get(field.getName()) == null) {
-                addMetaValidationError(meta, field.getName(), "required value");
-            }
-        });
+                    if (document.get(field.getName()) == null) {
+                        addMetaValidationError(meta, field.getName(), "required value");
+                    }
+                });
         document.putIfAbsent("_meta", meta);
         return document;
     }
@@ -226,13 +224,13 @@ public class ModelUtils {
         }
     }
 
-    public static List<Document> findValidationChanges(MongoService mongoService, List<Document> documents, Model model) {
+    public static List<Document> findValidationChanges(MongoService mongoService, List<Document> documents, Model model, SecretProperties secretProperties) {
         List<Field> idFields = findIdFields(model);
-        documents.forEach(document -> findValidationChanges(mongoService, document, model, idFields));
+        documents.forEach(document -> findValidationChanges(mongoService, document, model, idFields, secretProperties));
         return documents;
     }
 
-    private static Document findValidationChanges(MongoService mongoService, Document document, Model model, List<Field> idFields) {
+    private static Document findValidationChanges(MongoService mongoService, Document document, Model model, List<Field> idFields, SecretProperties secretProperties) {
         Meta meta = (Meta) document.get("_meta");
         if (meta == null) {
             meta = new Meta();
@@ -246,9 +244,11 @@ public class ModelUtils {
             getOptions.setLimit(1);
             Document old = mongoService.get(model.getCluster(), model.getDatabase(), model.getCollection(), new Document(documentIds), getOptions)
                     .collectItems().first().await().indefinitely();
+            // decrypt secret2
             if (old == null) {
                 // do nothing
             } else {
+                decryptSecrets(old, model, secretProperties);
                 Set<String> allKeys = new HashSet();
                 allKeys.addAll(old.keySet());
                 allKeys.addAll(document.keySet());
@@ -269,8 +269,8 @@ public class ModelUtils {
                             equal = Objects.equals(oldValue, newValue);
                         }
                         if (!equal) {
-                            if (field.getType().equals(Field.TYPE_SECRET1) || field.getType().equals(Field.TYPE_SECRET2)) {
-                                addValidationChange(meta, key, "secrets are always changing when persisted");
+                            if (field.getType().equals(Field.TYPE_SECRET1)) {
+                                addValidationChange(meta, key, "one way secrets are always changing when persisted");
                             } else {
                                 addValidationChange(meta, key, String.format("old: %s <> new: %s",
                                         oldValue == null ? "null" : oldValue.getClass().getSimpleName() + ": '" + oldValue + "'",
@@ -305,7 +305,7 @@ public class ModelUtils {
             return "null";
         } else if (object instanceof List) {
             return ((List<Object>) object).stream()
-                    .map(ModelUtils::toQuery)
+                    .map(com.k8scms.cms.utils.ModelUtils::toQuery)
                     .collect(Collectors.joining(","));
         } else if (object instanceof ObjectId) {
             // need to escape $ for the String.replaceAll method
@@ -395,17 +395,6 @@ public class ModelUtils {
         fieldErrors.add(error);
     }
 
-    private static Object toWire(Field field, Object object, SecretProperties secretProperties) {
-        switch (field.getType()) {
-            case Field.TYPE_SECRET1:
-                return "********";
-            case Field.TYPE_SECRET2:
-                return Utils.decrypt2(object.toString(), secretProperties.getSecretEncryptionKey());
-            default:
-                return toWire(object);
-        }
-    }
-
     private static Object toWire(Object object) {
         if (object instanceof List) {
             List<Object> list = new ArrayList<>();
@@ -426,25 +415,65 @@ public class ModelUtils {
         return object;
     }
 
-    public static Document toWire(Document document, Model model, SecretProperties secretProperties) {
+    public static Document toWire(Document document, Model model) {
         for (Map.Entry<String, Object> entry : document.entrySet()) {
-            Field field = ModelUtils.findField(model, entry.getKey());
-            entry.setValue(toWire(field, entry.getValue(), secretProperties));
+            Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
+            entry.setValue(toWire(entry.getValue()));
         }
         return document;
     }
 
-    public static Document fromWire(Document document, Model model, SecretProperties secretProperties) {
+    public static Document decryptSecrets(Document document, Model model, SecretProperties secretProperties) {
+        for (Map.Entry<String, Object> entry : document.entrySet()) {
+            Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
+            entry.setValue(decryptSecrets(field, entry.getValue(), secretProperties));
+        }
+        return document;
+    }
+
+    private static Object decryptSecrets(Field field, Object object, SecretProperties secretProperties) {
+        switch (field.getType()) {
+            case Field.TYPE_SECRET1:
+                return "********";
+            case Field.TYPE_SECRET2:
+                return Utils.decrypt2(object.toString(), secretProperties.getSecretEncryptionKey());
+            default:
+                return object;
+        }
+    }
+
+    public static Document encryptSecrets(Document document, Model model, SecretProperties secretProperties) {
+        for (Map.Entry<String, Object> entry : document.entrySet()) {
+            Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
+            entry.setValue(encryptSecrets(field.getType(), entry.getValue(), secretProperties));
+        }
+        return document;
+    }
+
+    private static Object encryptSecrets(String type, Object value, SecretProperties secretProperties) {
+        Object result = value;
+        switch (type) {
+            case Field.TYPE_SECRET1:
+                result = Utils.encrypt1(value.toString(), secretProperties.getSecretEncryptionKey());
+                break;
+            case Field.TYPE_SECRET2:
+                result = Utils.encrypt2(value.toString(), secretProperties.getSecretEncryptionKey());
+                break;
+        }
+        return result;
+    }
+
+    public static Document fromWire(Document document, Model model) {
         if (document != null) {
             for (Map.Entry<String, Object> entry : document.entrySet()) {
-                Field field = ModelUtils.findField(model, entry.getKey());
-                entry.setValue(fromWire(field.getType(), field.getArrayType(), entry.getValue(), secretProperties));
+                Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
+                entry.setValue(fromWire(field.getType(), field.getArrayType(), entry.getValue()));
             }
         }
         return document;
     }
 
-    private static Object fromWire(String type, String arrayType, Object value, SecretProperties secretProperties) {
+    private static Object fromWire(String type, String arrayType, Object value) {
         Object result = value;
         if (value != null) {
             switch (type) {
@@ -476,17 +505,11 @@ public class ModelUtils {
                         // do nothing
                     }
                     break;
-                case Field.TYPE_SECRET1:
-                    result = Utils.encrypt1(value.toString(), secretProperties.getSecretEncryptionKey());
-                    break;
-                case Field.TYPE_SECRET2:
-                    result = Utils.encrypt2(value.toString(), secretProperties.getSecretEncryptionKey());
-                    break;
                 case Field.TYPE_ARRAY:
                     if (value instanceof List && arrayType != null) {
                         List<Object> newList = new ArrayList<>();
                         for (Object listValue : (List) value) {
-                            newList.add(fromWire(arrayType, null, listValue, secretProperties));
+                            newList.add(fromWire(arrayType, null, listValue));
                         }
                         result = newList;
                     }
