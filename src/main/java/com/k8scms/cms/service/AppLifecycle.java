@@ -84,6 +84,7 @@ public class AppLifecycle {
                             String modelText = String.join("", readAllLines(path));
                             String replaceProperties = Utils.replaceProperties(modelText);
                             Document model = Document.parse(replaceProperties);
+                            log.debug("Start upserting");
                             String cluster = model.getString("cluster");
                             String database = model.getString("database");
                             String collection = model.getString("collection");
