@@ -126,7 +126,6 @@ public class ApiResource {
         documents = documents.stream()
                 .map(document -> ModelUtils.addRelations(document, model, mongoService))
                 .map(document -> ModelUtils.toWire(document, model))
-                .map(document -> ModelUtils.decryptSecrets(document, model, secretProperties))
                 .collect(Collectors.toList());
         sortMeta(getOptions, documents);
         return documents;
