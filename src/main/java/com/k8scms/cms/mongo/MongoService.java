@@ -82,6 +82,7 @@ public class MongoService {
                             builder.maxWaitTime(cmsProperties.getMongoTimeout(), TimeUnit.SECONDS);
                         })
                         .build();
+                logger.debug("Adding client '{}'", clusterTokens[0]);
                 mongoClients.put(clusterTokens[0], new ReactiveMongoClientImpl(MongoClients.create(mongoClientSettings)));
             } catch (NoSuchElementException e) {
                 // expected
