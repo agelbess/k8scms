@@ -16,7 +16,7 @@
       },
       {
         "name": "IBAN",
-        "type": "secret2"
+        "encryption": "secret2"
       },
       {
         "name": "amount",
