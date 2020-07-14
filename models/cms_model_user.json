@@ -11,7 +11,7 @@
     },
     {
       "name": "password",
-      "type": "secret1"
+      "encryption": "secret1"
     },
     {
       "name": "name"

@@ -178,12 +178,6 @@ public class ModelUtils {
                     addMetaValidationError(meta, fieldName, String.format("'%s' is not of type oid", value));
                 }
                 break;
-            case Field.TYPE_SECRET1:
-            case Field.TYPE_SECRET2:
-                if (!(value instanceof String)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not a secret", value));
-                }
-                break;
             case Field.TYPE_CRON:
                 if (!(value instanceof String)) {
                     addMetaValidationError(meta, fieldName, String.format("'%s' is not a cron expression", value));
@@ -269,7 +263,7 @@ public class ModelUtils {
                             equal = Objects.equals(oldValue, newValue);
                         }
                         if (!equal) {
-                            if (field.getType().equals(Field.TYPE_SECRET1)) {
+                            if (field.getType().equals(Field.ENCRYPTION_SECRET1)) {
                                 addValidationChange(meta, key, "one way secrets are always changing when persisted");
                             } else {
                                 addValidationChange(meta, key, String.format("old: %s <> new: %s",
@@ -432,33 +426,38 @@ public class ModelUtils {
     }
 
     private static Object decryptSecrets(Field field, Object object, SecretProperties secretProperties) {
-        switch (field.getType()) {
-            case Field.TYPE_SECRET1:
-                return "********";
-            case Field.TYPE_SECRET2:
-                return Utils.decrypt2(object.toString(), secretProperties.getSecretEncryptionKey());
-            default:
-                return object;
+        if (field.getEncryption() != null) {
+            switch (field.getEncryption()) {
+                case Field.ENCRYPTION_SECRET1:
+                    return "********";
+                case Field.ENCRYPTION_SECRET2:
+                    if (object != null) {
+                        return fromWire(field.getType(), field.getArrayType(), Utils.decrypt2(object.toString(), secretProperties.getSecretEncryptionKey()));
+                    }
+            }
         }
+        return object;
     }
 
     public static Document encryptSecrets(Document document, Model model, SecretProperties secretProperties) {
         for (Map.Entry<String, Object> entry : document.entrySet()) {
             Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
-            entry.setValue(encryptSecrets(field.getType(), entry.getValue(), secretProperties));
+            entry.setValue(encryptSecrets(field, entry.getValue(), secretProperties));
         }
         return document;
     }
 
-    private static Object encryptSecrets(String type, Object value, SecretProperties secretProperties) {
+    private static Object encryptSecrets(Field field, Object value, SecretProperties secretProperties) {
         Object result = value;
-        switch (type) {
-            case Field.TYPE_SECRET1:
-                result = Utils.encrypt1(value.toString(), secretProperties.getSecretEncryptionKey());
-                break;
-            case Field.TYPE_SECRET2:
-                result = Utils.encrypt2(value.toString(), secretProperties.getSecretEncryptionKey());
-                break;
+        if (field.getEncryption() != null && value != null) {
+            switch (field.getEncryption()) {
+                case Field.ENCRYPTION_SECRET1:
+                    result = Utils.encrypt1(value.toString(), secretProperties.getSecretEncryptionKey());
+                    break;
+                case Field.ENCRYPTION_SECRET2:
+                    result = Utils.encrypt2(value.toString(), secretProperties.getSecretEncryptionKey());
+                    break;
+            }
         }
         return result;
     }

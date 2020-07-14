@@ -118,7 +118,10 @@ public class ApiResource {
 
         GetOptions getOptions = Utils.getOptionsFromUriInfo(uriInfo);
         // do not nest mongo reactive flows, first block to get the data and next execute other mongo flows that block
-        List<Document> documents = mongoService.get(cluster, database, collection, filter, getOptions).collectItems().asList().await().indefinitely();
+        List<Document> documents = mongoService.get(cluster, database, collection, filter, getOptions).collectItems().asList().await().indefinitely()
+                .stream()
+                .map(document -> ModelUtils.decryptSecrets(document, model, secretProperties))
+                .collect(Collectors.toList());
         ModelUtils.validate(documents, model);
         documents = documents.stream()
                 .map(document -> ModelUtils.addRelations(document, model, mongoService))
@@ -246,12 +249,14 @@ public class ApiResource {
 
         GetOptions getOptions = Utils.getOptionsFromDocument(filterWithGetOptions);
         // do not nest mongo reactive flows, first block to get the data and next execute other mongo flows that block
-        List<Document> documents = mongoService.get(cluster, database, collection, filter, getOptions).collectItems().asList().await().indefinitely();
+        List<Document> documents = mongoService.get(cluster, database, collection, filter, getOptions).collectItems().asList().await().indefinitely()
+                .stream()
+                .map(document -> ModelUtils.decryptSecrets(document, model, secretProperties))
+                .collect(Collectors.toList());
         ModelUtils.validate(documents, model);
         documents = documents.stream()
                 .map(document -> ModelUtils.addRelations(document, model, mongoService))
                 .map(document -> ModelUtils.toWire(document, model))
-                .map(document -> ModelUtils.decryptSecrets(document, model, secretProperties))
                 .collect(Collectors.toList());
         sortMeta(getOptions, documents);
         return documents;

@@ -72,12 +72,6 @@
                 case 'phone':
                     iconE = $('<span>').addClass('material-icons').text('phone');
                     break;
-                case 'secret1':
-                    iconE = $('<span>').addClass('material-icons').text('enhanced_encryption');
-                    break;
-                case 'secret2':
-                    iconE = $('<span>').addClass('material-icons').text('enhanced_encryption');
-                    break;
                 case 'cron':
                     iconE = $('<span>').addClass('material-icons').text('access_alarm');
                     break;
@@ -86,6 +80,14 @@
                     break;
                 default:
                     iconE = $('<span>').addClass('material-icons').text('text_format');
+            }
+            switch (field.encryption) {
+                case 'secret1':
+                    iconE = $('<span>').addClass('material-icons').text('enhanced_encryption');
+                    break;
+                case 'secret2':
+                    iconE = $('<span>').addClass('material-icons').text('enhanced_encryption');
+                    break;
             }
             let spanE = $('<span>').append(iconE);
             if (field.regex) {

@@ -49,13 +49,16 @@
                     case 'boolean':
                         input = createSwitchInput(model, field);
                         break;
-                    case 'secret1':
-                        input = createTextInput(model, field);
-                        input.inputE.attr('type', 'password')
-                        break;
-                    case 'secret2':
-                        input = createTextInput(model, field);
-                        break;
+                    /*
+                case 'secret1':
+                    input = createTextInput(model, field);
+                    input.inputE.attr('type', 'password')
+                    break;
+                case 'secret2':
+                    input = createTextInput(model, field);
+                    break;
+
+                     */
                     case 'phone':
                         input = createTextInput(model, field, '^[0-9\\s+-\\.]*$');
                         break;

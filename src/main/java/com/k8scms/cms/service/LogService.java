@@ -23,7 +23,6 @@
 package com.k8scms.cms.service;
 
 import com.k8scms.cms.CmsProperties;
-import com.k8scms.cms.model.Field;
 import com.k8scms.cms.mongo.MongoService;
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -39,7 +38,7 @@ import java.util.Optional;
 
 @ApplicationScoped
 public class LogService {
-    private static final Logger logger = LoggerFactory.getLogger(LogService.class);
+    private static final Logger logger = LoggerFactory.getLogger(com.k8scms.cms.service.LogService.class);
 
     @Inject
     MongoService mongoService;
@@ -54,7 +53,7 @@ public class LogService {
         // do not log secrets
         if (body != null) {
             modelService.getModel(cluster, database, collection).getFields().stream()
-                    .filter(f -> f.getType().equals(Field.TYPE_SECRET1) || f.getType().equals(Field.TYPE_SECRET2))
+                    .filter(f -> f.getEncryption() != null)
                     .forEach(field -> body.put(field.getName(), "********"));
         }
 

@@ -36,8 +36,8 @@ public class Field {
     public static final String TYPE_ARRAY = "array";
     public static final String TYPE_EMAIL = "email";
     public static final String TYPE_PHONE = "phone";
-    public static final String TYPE_SECRET1 = "secret1"; // one way encryption
-    public static final String TYPE_SECRET2 = "secret2"; // two way encryption
+    public static final String ENCRYPTION_SECRET1 = "secret1"; // one way encryption
+    public static final String ENCRYPTION_SECRET2 = "secret2"; // two way encryption
     public static final String TYPE_CRON = "cron"; // cron expression
     public static final String TYPE_GEO_JSON = "geoJson"; // GeoJSON
 
@@ -60,6 +60,7 @@ public class Field {
     private String regex;
     private String charset;
     private boolean ignoreValidationChanges;
+    private String encryption;
 
     public boolean isId() {
         return id;
@@ -156,5 +157,13 @@ public class Field {
 
     public void setIgnoreValidationChanges(boolean ignoreValidationChanges) {
         this.ignoreValidationChanges = ignoreValidationChanges;
+    }
+
+    public String getEncryption() {
+        return encryption;
+    }
+
+    public void setEncryption(String encryption) {
+        this.encryption = encryption;
     }
 }

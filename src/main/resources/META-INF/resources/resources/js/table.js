@@ -434,7 +434,7 @@
                 const setData = function (data, callback) {
                     table.data = data;
                     let i = 0;
-                    let hasSecret1Columns = model.fields.filter(c => c.type === 'secret1').length > 0;
+                    let hasSecret1Columns = model.fields.filter(c => c.encryption === 'secret1').length > 0;
                     if (hasSecret1Columns && !isStatic) {
                         $.cms.log.info(`model has 'secret1' field types, updating the document would corrupt the secret fields...`)
                         $.cms.log.info(`...editing the document is disabled, try editing each field individually`);
@@ -533,10 +533,6 @@
                                         case 'integer':
                                         case 'decimal':
                                         case 'boolean':
-                                        case 'secret1':
-                                        case 'secret2':
-                                            dataE.text(value);
-                                            break;
                                         case 'string':
                                             if (value && typeof value === 'string' && value.length > 50) {
                                                 dataE.append($('<span>').text(value.substring(0, 47) + '...'))

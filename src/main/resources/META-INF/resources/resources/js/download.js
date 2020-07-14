@@ -91,14 +91,11 @@
                                     }
                                     // no change
                                     break;
-                                case 'secret1':
-                                    v = undefined;
-                                    // no type
-                                    // no change
-                                    break;
                                 default:
                                     $.cms.log.error(`invalid field type '${f.type}'`);
                             }
+                        } else if (f.encryption === 'secret1') {
+                            v = undefined;
                         } else {
                             // no type
                             // no change to data
