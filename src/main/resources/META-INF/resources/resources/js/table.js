@@ -742,9 +742,6 @@
                             }
                             dialog.close();
                         }
-                    },
-                    keyup: {
-                        key: 'Enter'
                     }
                 }
                 let resetAction = {
