@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: application
-        image: gcr.io/k8scms/k8scms:v0.2.0
+        image: gcr.io/k8scms/k8scms:v0.3.0
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3

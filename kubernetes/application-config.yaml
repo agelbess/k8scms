@@ -13,6 +13,7 @@ data:
 
     cms.cluster=cms
     cms.cluster-0=cms,mongodb://user:pass@35.202.214.44:27017
+    cms.cluster-1=loans,mongodb://user:pass@35.202.214.44:27017
     # the collection for the models
     cms.collection-model=cms-model
     # the collection for the users
