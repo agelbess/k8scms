@@ -30,6 +30,10 @@
       "type": "array"
     },
     {
+      "name": "systemFields",
+      "type": "array"
+    },
+    {
       "name": "createDate",
       "type": "date"
     },
