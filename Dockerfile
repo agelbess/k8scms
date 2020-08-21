@@ -6,6 +6,7 @@ WORKDIR /deployments
 COPY target/lib/* ./lib/
 COPY target/*-runner.jar ./app.jar
 COPY models ./models
+# COPY application.properties /deployments/config/application.properties
 
 EXPOSE 8080
 

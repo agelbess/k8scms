@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,21 +18,23 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
-$(function () {
-    $(window).on('load', async function (event) {
+$(window).on('load', function (event) {
+    setTimeout(async () => {
         let uidCookie = $.cms.utils.getCookie('UID');
         // when logging out we set it to null
         // init log for messages
         $.cms.log.init();
         if (!uidCookie || uidCookie === 'null' || uidCookie === 'undefined') {
-            showLoginDialog();
+            $.cms.router.showLoginDialog();
         } else {
-            await init();
+            await $.cms.router.init();
         }
-    })
+    }, 0);
+})
+
+$(function () {
 
     const init = async function () {
 
@@ -90,6 +90,9 @@ $(function () {
                 } else {
                     $.cms.log.info(`fill both 'name' and 'password'`);
                 }
+            },
+            keyup: {
+                key: "Enter"
             }
         }
         actions.push(loginAction);
@@ -160,11 +163,14 @@ $(function () {
             }
             pageE.fadeIn();
             $('#cms-header-header-title').text(title)
+            $('#cms-title').text(`${$.cms.context.resources.properties.projectName} \n ${title}`)
             page.start(valuesMap);
         }
 
         return {
-            render: render
+            render: render,
+            init: init,
+            showLoginDialog: showLoginDialog
         }
     }
 

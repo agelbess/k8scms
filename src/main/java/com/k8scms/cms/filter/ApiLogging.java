@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,13 +18,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.filter;
 
-import com.k8scms.cms.resource.ApiResource;
+import com.k8scms.cms.CmsProperties;
 import com.k8scms.cms.Constants;
+import com.k8scms.cms.resource.ApiResource;
 import com.k8scms.cms.service.LogService;
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -43,6 +41,8 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -54,6 +54,9 @@ public class ApiLogging implements ContainerRequestFilter {
     private static final Logger log = LoggerFactory.getLogger(ApiLogging.class);
 
     @Inject
+    CmsProperties cmsProperties;
+
+    @Inject
     LogService logService;
 
     @Override
@@ -61,12 +64,16 @@ public class ApiLogging implements ContainerRequestFilter {
         Document user = (Document) containerRequestContext.getProperty(Constants.CONTEXT_PROPERTY_USER);
 
         MultivaluedMap<String, String> pathParameters = containerRequestContext.getUriInfo().getPathParameters();
-        String database = pathParameters.get(ApiResource.PATH_PARAM_DATABASE).stream().findAny()
-                .orElseThrow(() -> new IllegalArgumentException("path param " + ApiResource.PATH_PARAM_DATABASE + " not found"));
+        String cluster = Optional.ofNullable(pathParameters.get(ApiResource.PATH_PARAM_CLUSTER))
+                .orElse(Arrays.asList(cmsProperties.getCluster()))
+                .stream().findAny().get();
+        String database = Optional.ofNullable(pathParameters.get(ApiResource.PATH_PARAM_DATABASE))
+                .orElse(Arrays.asList(cmsProperties.getDatabase()))
+                .stream().findAny().get();
         String collection = pathParameters.get(ApiResource.PATH_PARAM_COLLECTION).stream().findAny()
                 .orElseThrow(() -> new IllegalArgumentException("path param " + ApiResource.PATH_PARAM_COLLECTION + " not found"));
         String method = containerRequestContext.getMethod();
-        // TODO
+        // TODO this is not very elegant
         if (containerRequestContext.getUriInfo().getPath().endsWith("/GET")) {
             method = "GET";
         }
@@ -75,6 +82,7 @@ public class ApiLogging implements ContainerRequestFilter {
         containerRequestContext.setEntityStream(new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
 
         logService.log(
+                cluster,
                 database,
                 collection,
                 method,

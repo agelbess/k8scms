@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
@@ -40,8 +37,8 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
-        const getIdField = function (model) {
-            return model.fields.filter((c) => c.id).pop();
+        const getIdFields = function (model) {
+            return model.fields.filter((c) => c.id);
         }
 
         const findFieldByName = function (fields, name) {
@@ -75,12 +72,6 @@
                 case 'phone':
                     iconE = $('<span>').addClass('material-icons').text('phone');
                     break;
-                case 'secret1':
-                    iconE = $('<span>').addClass('material-icons').text('enhanced_encryption');
-                    break;
-                case 'secret2':
-                    iconE = $('<span>').addClass('material-icons').text('enhanced_encryption');
-                    break;
                 case 'cron':
                     iconE = $('<span>').addClass('material-icons').text('access_alarm');
                     break;
@@ -89,6 +80,14 @@
                     break;
                 default:
                     iconE = $('<span>').addClass('material-icons').text('text_format');
+            }
+            switch (field.encryption) {
+                case 'secret1':
+                    iconE = $('<span>').addClass('material-icons').text('enhanced_encryption');
+                    break;
+                case 'secret2':
+                    iconE = $('<span>').addClass('material-icons').text('enhanced_encryption');
+                    break;
             }
             let spanE = $('<span>').append(iconE);
             if (field.regex) {
@@ -99,6 +98,20 @@
             }
             return spanE;
         }
+
+        const getSystemFieldIcon = function (systemField) {
+            let iconE;
+            switch (systemField.type) {
+                case 'postDate':
+                    iconE = $('<span>').addClass('material-icons').text('system_update_alt');
+                    break;
+                case 'putPatchDate':
+                    iconE = $('<span>').addClass('material-icons').text('system_update_alt');
+                    break;
+            }
+            return $('<span>').append(iconE);
+        }
+
         // reads cookies
         const getCookie = function (name) {
             var c = document.cookie.split('; ');
@@ -120,6 +133,9 @@
 
         const equal = function (o1, o2) {
             if (o1 instanceof Object && o2 instanceof Object) {
+                if (Object.keys(o1).length !== Object.keys(o2).length) {
+                    return false;
+                }
                 for (p in o1) {
                     if (!equal(o1[p], o2[p])) {
                         return false;
@@ -156,14 +172,28 @@
             return getHashParams()[name];
         }
 
+        const evalHash = function (map) {
+            let hash = '';
+            for (let k in map) {
+                hash += (hash ? '&' : '') + (map[k] !== undefined ? k + '=' + map[k] : k);
+            }
+            return hash;
+        }
+
         const setHashParam = function (key, value) {
             let params = getHashParams();
             params[key] = value;
-            let hash = '';
-            for (let k in params) {
-                hash += (hash ? '&' : '') + (params[k] !== undefined ? k + '=' + params[k] : k);
-            }
-            window.location.hash = hash;
+            window.location.hash = evalHash(params);
+        }
+
+        const setHashParams = function (params) {
+            window.location.hash = evalHash(params);
+        }
+
+        const removeHashParam = function (key) {
+            let params = getHashParams();
+            delete params[key];
+            window.location.hash = evalHash(params);
         }
 
         function dynamicJson(key, json, expand, comma) {
@@ -173,7 +203,7 @@
             }
             let copyToClipboardE = $('<span>').addClass('material-icons cms-json-copy').text('file_copy')
                 .on('click', () => {
-                    copyToClipboard(JSON.stringify(json));
+                    copyToClipboard(JSON.stringify(json, undefined, 2));
                     $.cms.log.info('json copied to clipboard');
                 });
             if (Array.isArray(json)) {
@@ -259,29 +289,59 @@
             document.body.removeChild(el);
         }
 
+        const filterObject = function (o, keys) {
+            let result = {};
+            for (let key of keys) {
+                if (o[key] !== undefined) {
+                    result[key] = o[key];
+                }
+            }
+            return result;
+        }
+
+        const replaceAll = function (target, replaceS, withS) {
+            while (target.includes(replaceS)) {
+                target = target.replace(replaceS, withS);
+            }
+            return target;
+        }
+
         const mdl = function () {
             setTimeout(() => componentHandler.upgradeElement($(this)[0]));
             return $(this);
         }
+        // use it when changing a value of a textfield. e.g. element.mdlNot().mdl()
+        const mdlNot = function () {
+            componentHandler.downgradeElements($(this)[0]);
+            return $(this);
+        }
         // register in $
         $.fn.mdl = mdl;
+        $.fn.mdlNot = mdlNot;
 
         return {
             ajaxError: ajaxError,
             sleep: sleep,
-            getIdField: getIdField,
+            getIdFields: getIdFields,
             findFieldByName: findFieldByName,
             getFieldIcon: getFieldIcon,
+            getSystemFieldIcon: getSystemFieldIcon,
             getCookie: getCookie,
             setCookie: setCookie,
             equal: equal,
             getHashParams: getHashParams,
+            evalHash: evalHash,
             getHashParam: getHashParam,
             setHashParam: setHashParam,
+            setHashParams: setHashParams,
+            removeHashParam: removeHashParam,
             dynamicJson: dynamicJson,
             loading: loading,
             copyToClipboard: copyToClipboard,
-            mdl: mdl
+            filterObject: filterObject,
+            replaceAll: replaceAll,
+            mdl: mdl,
+            mdlNot: mdlNot
         }
     }
 

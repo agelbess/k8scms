@@ -1,0 +1,299 @@
+[
+  {
+    "cluster": "test",
+    "database": "test",
+    "collection": "test",
+    "name": "test",
+    "fields": [
+      {
+        "id": true,
+        "name": "_id",
+        "type": "oid"
+      },
+      {
+        "name": "string"
+      },
+      {
+        "name": "integer",
+        "type": "integer"
+      },
+      {
+        "name": "decimal",
+        "type": "decimal"
+      },
+      {
+        "name": "date",
+        "type": "date"
+      },
+      {
+        "name": "boolean",
+        "type": "boolean"
+      },
+      {
+        "name": "email",
+        "type": "email"
+      },
+      {
+        "name": "phone",
+        "type": "phone"
+      },
+      {
+        "name": "secret",
+        "encryption": "secret2"
+      },
+      {
+        "name": "cron",
+        "type": "cron"
+      },
+      {
+        "name": "json",
+        "type": "json"
+      },
+      {
+        "name": "jsonWithSchema",
+        "type": "json",
+        "json": {
+          "var1": null,
+          "var2": null
+        }
+      },
+      {
+        "name": "geoJson",
+        "type": "geoJson"
+      },
+      {
+        "name": "stringRegex",
+        "regex": "\\z|alex"
+      },
+      {
+        "name": "numberRegex",
+        "regex": "[0-9]*(\\.[0-9]*)?"
+      },
+      {
+        "name": "euroRegex",
+        "regex": "^\\d*(\\.)?(\\d{1,2})?$"
+      },
+      {
+        "regex": "0*(\\.[0-9]*)?|1",
+        "name": "0-1Regex",
+        "label": "percentage as 0..1",
+        "type": "decimal"
+      },
+      {
+        "name": "stringArray",
+        "type": "array",
+        "arrayType": "string"
+      },
+      {
+        "name": "integerArray",
+        "type": "array",
+        "arrayType": "integer"
+      },
+      {
+        "name": "booleanArray",
+        "type": "array",
+        "arrayType": "boolean"
+      },
+      {
+        "name": "oidArray",
+        "type": "array",
+        "arrayType": "oid"
+      },
+      {
+        "name": "dateArray",
+        "type": "array",
+        "arrayType": "date"
+      },
+      {
+        "name": "systemPostDate",
+        "type": "date"
+      },
+      {
+        "name": "systemPutPatchDate",
+        "type": "date"
+      }
+    ],
+    "systemFields": [
+      {
+        "name": "systemPostDate",
+        "type": "postDate"
+      },
+      {
+        "name": "systemPutPatchDate",
+        "type": "putPatchDate"
+      }
+    ],
+    "indexes": [
+      {
+        "index": {
+          "geoJson": "2dsphere"
+        }
+      }
+    ]
+  },
+  {
+    "cluster": "test",
+    "database": "test",
+    "collection": "testRelationParent_name",
+    "name": "testRelationParent_name",
+    "fields": [
+      {
+        "name": "_id",
+        "id": true,
+        "type": "oid"
+      },
+      {
+        "name": "name"
+      },
+      {
+        "name": "nationality"
+      },
+      {
+        "name": "testRelationChildName"
+      },
+      {
+        "name": "testRelationChildNickname",
+        "label": "child nickname",
+        "virtual": "testRelationChildByName.nickname"
+      },
+      {
+        "name": "testRelationChildAge",
+        "label": "child age",
+        "type": "integer",
+        "virtual": "testRelationChildByName.age"
+      },
+      {
+        "name": "testRelationChildByName",
+        "type": "array",
+        "hidden": true,
+        "relation": {
+          "cluster": "test",
+          "database": "test",
+          "collection": "testRelationChild",
+          "filter": "{'name':{testRelationChildName}}"
+        }
+      },
+      {
+        "name": "testRelationChildrenNames",
+        "type": "array"
+      },
+      {
+        "name": "testRelationChildrenByName",
+        "type": "array",
+        "relation": {
+          "cluster": "test",
+          "database": "test",
+          "collection": "testRelationChild",
+          "filter": "{'name':{'$in':[{testRelationChildrenNames}]}}"
+        }
+      }
+    ]
+  },
+  {
+    "cluster": "test",
+    "database": "test",
+    "collection": "testRelationParent_id",
+    "name": "testRelationParent_id",
+    "fields": [
+      {
+        "name": "_id",
+        "id": true,
+        "type": "oid"
+      },
+      {
+        "name": "name"
+      },
+      {
+        "name": "nationality"
+      },
+      {
+        "name": "testRelationChild_id",
+        "type": "oid"
+      },
+      {
+        "name": "testRelationChildNickname",
+        "label": "child nickname",
+        "virtual": "testRelationChildBy_id.nickname"
+      },
+      {
+        "name": "testRelationChildAge",
+        "label": "child age",
+        "type": "integer",
+        "virtual": "testRelationChildBy_id.age"
+      },
+      {
+        "name": "testRelationChildBy_id",
+        "type": "array",
+        "hidden": true,
+        "relation": {
+          "cluster": "test",
+          "database": "test",
+          "collection": "testRelationChild",
+          "filter": "{'_id':{testRelationChild_id}}"
+        }
+      },
+      {
+        "arrayType": "oid",
+        "name": "testRelationChildren_id",
+        "type": "array"
+      },
+      {
+        "name": "testRelationChildrenBy_id",
+        "type": "array",
+        "relation": {
+          "cluster": "test",
+          "database": "test",
+          "collection": "testRelationChild",
+          "filter": "{'_id':{'$in':[{testRelationChildren_id}]}}"
+        }
+      }
+    ]
+  },
+  {
+    "cluster": "test",
+    "database": "test",
+    "collection": "testRelationChild",
+    "name": "testRelationChild",
+    "fields": [
+      {
+        "id": true,
+        "name": "_id",
+        "type": "oid"
+      },
+      {
+        "name": "name"
+      },
+      {
+        "name": "nickname"
+      },
+      {
+        "name": "age",
+        "type": "integer"
+      }
+    ]
+  },
+  {
+    "cluster": "test",
+    "database": "test",
+    "collection": "compositeId",
+    "name": "composite id",
+    "fields": [
+      {
+        "name": "_id",
+        "type": "oid"
+      },
+      {
+        "id": true,
+        "name": "firstName"
+      },
+      {
+        "id": true,
+        "name": "lastName"
+      },
+      {
+        "name": "age",
+        "type": "integer"
+      }
+    ]
+  }
+]

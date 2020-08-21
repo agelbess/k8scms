@@ -1,0 +1,90 @@
+{
+  "cluster": "${cms.cluster}",
+  "database": "${cms.database}",
+  "collection": "${cms.collection-user}",
+  "name": "cms-user",
+  "fields": [
+    {
+      "id": true,
+      "name": "_id",
+      "type": "oid"
+    },
+    {
+      "name": "password",
+      "encryption": "secret1"
+    },
+    {
+      "name": "name"
+    },
+    {
+      "name": "securityRealm",
+      "regex": "^local|ldap$"
+    },
+    {
+      "name": "email",
+      "type": "email"
+    },
+    {
+      "name": "phone",
+      "type": "phone"
+    },
+    {
+      "name": "permissions",
+      "type": "array"
+    },
+    {
+      "name": "roles",
+      "type": "array"
+    },
+    {
+      "name": "rolesRelation",
+      "type": "array",
+      "relation": {
+        "cluster": "${cms.cluster}",
+        "database": "${cms.database}",
+        "collection": "${cms.collection-role}",
+        "filter": "{ 'name': { '$in': [{roles}] } }"
+      }
+    },
+    {
+      "name": "filters",
+      "type": "array"
+    },
+    {
+      "name": "createDate",
+      "type": "date"
+    },
+    {
+      "name": "updateDate",
+      "type": "date"
+    }
+  ],
+  "systemFields": [
+    {
+      "name": "createDate",
+      "type": "postDate"
+    },
+    {
+      "name": "updateDate",
+      "type": "putPatchDate"
+    }
+  ],
+  "indexes": [
+    {
+      "index": {
+        "name": "1"
+      },
+      "options": {
+        "unique": true
+      }
+    },
+    {
+      "index": {
+        "email": "1"
+      },
+      "options": {
+        "unique": true
+      }
+    }
+  ]
+}

@@ -1,8 +1,7 @@
+
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +19,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.model;
@@ -30,6 +28,7 @@ public class MethodResult {
     private Long deleteCount;
     private Long matchedCount;
     private String insertedId;
+    private String upsertedId;
 
     public Long getModifiedCount() {
         return modifiedCount;
@@ -61,5 +60,13 @@ public class MethodResult {
 
     public void setInsertedId(String insertedId) {
         this.insertedId = insertedId;
+    }
+
+    public String getUpsertedId() {
+        return upsertedId;
+    }
+
+    public void setUpsertedId(String upsertedId) {
+        this.upsertedId = upsertedId;
     }
 }

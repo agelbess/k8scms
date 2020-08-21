@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.model;
@@ -28,10 +25,24 @@ package com.k8scms.cms.model;
 import java.util.List;
 
 public class Model {
+    private String cluster;
     private String database;
     private String collection;
+    private String name;
     private List<Field> fields;
     private List<ModelIndex> indexes;
+    private List<SystemField> systemFields;
+
+    public Model() {
+    }
+
+    public String getCluster() {
+        return cluster;
+    }
+
+    public void setCluster(String cluster) {
+        this.cluster = cluster;
+    }
 
     public String getDatabase() {
         return database;
@@ -49,6 +60,14 @@ public class Model {
         this.collection = collection;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public List<Field> getFields() {
         return fields;
     }
@@ -63,5 +82,13 @@ public class Model {
 
     public void setIndexes(List<ModelIndex> indexes) {
         this.indexes = indexes;
+    }
+
+    public List<SystemField> getSystemFields() {
+        return systemFields;
+    }
+
+    public void setSystemFields(List<SystemField> systemFields) {
+        this.systemFields = systemFields;
     }
 }

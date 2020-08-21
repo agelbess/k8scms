@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,14 +18,13 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
     const Constructor = function () {
 
         let xlsx = function (data, model) {
-            const filename = `${model.database}_${model.collection}.xlsx`;
+            const filename = `${model.cluster}_${model.database}_${model.collection}.xlsx`;
             const sheetName = model.collection;
             let workbook = {
                 SheetNames: [],
@@ -40,19 +37,20 @@
                     r: 0
                 },
                 e: {
-                    c: model.fields.length,
+                    c: model.fields.length - 1,
                     r: data.length
                 }
             };
 
+            let filteredFields = model.fields.filter(f => !f.relation && !f.virtual);
             for (let ir = 0; ir < data.length; ir++) {
-                for (let ic = 0; ic < model.fields.length; ic++) {
-                    let c = model.fields[ic];
-                    let v = data[ir][c.name];
+                for (let ic = 0; ic < filteredFields.length; ic++) {
+                    let f = filteredFields[ic];
+                    let v = data[ir][f.name];
                     if (ir === 0) {
                         let cell = {
                             t: 's',
-                            v: c.name,
+                            v: f.name,
                         };
                         let cell_ref = XLSX.utils.encode_cell({
                             c: ic,
@@ -62,9 +60,9 @@
                     }
                     let t;
                     if (v !== null && v !== undefined) {
-                        if (c.type) {
+                        if (f.type) {
                             // cell type
-                            switch (c.type) {
+                            switch (f.type) {
                                 case null:
                                 case undefined:
                                 case 'string':
@@ -73,11 +71,14 @@
                                 case 'boolean':
                                 case 'email':
                                 case 'phone':
+                                case 'cron':
+                                case 'geoJson':
                                 case 'secret2':
                                     // no type
                                     // not change
                                     break;
                                 case 'json':
+                                case 'array':
                                     t = 's';
                                     if (v instanceof Object) {
                                         v = JSON.stringify(v);
@@ -85,17 +86,16 @@
                                     break;
                                 case 'integer':
                                 case 'decimal':
-                                    t = 'n';
-                                    // no change
-                                    break;
-                                case 'secret1':
-                                    v = undefined;
-                                    // no type
+                                    if (!isNaN(v)) {
+                                        t = 'n';
+                                    }
                                     // no change
                                     break;
                                 default:
-                                    $.cms.log.error(`invalid field type '${c.type}'`);
+                                    $.cms.log.error(`invalid field type '${f.type}'`);
                             }
+                        } else if (f.encryption === 'secret1') {
+                            v = undefined;
                         } else {
                             // no type
                             // no change to data
@@ -138,6 +138,15 @@
                 // charset : '777'
             }), filename);
         }
+        let json = function (data, model) {
+            data.forEach(d => delete d._meta);
+            const filename = `${model.cluster}_${model.database}_${model.collection}.json`;
+            downloadBlob(new Blob([JSON.stringify(data, undefined, 2)], {
+                type: 'application/octet-stream',
+                // charset : '777'
+            }), filename);
+
+        }
 
         let downloadBlob = function (blob, fileName) {
             var a = window.document.createElement('a');
@@ -151,7 +160,8 @@
         }
 
         return {
-            xlsx: xlsx
+            xlsx: xlsx,
+            json: json
         }
     }
 

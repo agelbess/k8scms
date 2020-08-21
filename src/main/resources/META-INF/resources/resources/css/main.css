@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,8 +18,23 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
+
+.material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+}
 
 body {
     font-family: "Roboto", "Helvetica", "Arial", sans-serif;
@@ -102,8 +115,26 @@ td .mdl-tooltip, th .mdl-tooltip {
     font-size: small;
 }
 
+.cms-table-header-virtual, .cms-table-cell-virtual {
+    color: rgba(0, 0, 0, .34);
+}
+
+.cms-table-header-relation, .cms-table-cell-relation {
+    color: rgba(0, 0, 0, .34);
+}
+
 .cms-table-tooltip-warn {
     background-color: rgba(68, 138, 255, 0.9);
+    color: white;
+}
+
+.cms-table-tooltip-change {
+    background-color: red;
+    color: white;
+}
+
+.cms-table-tooltip-relationError {
+    background-color: red;
     color: white;
 }
 
@@ -140,6 +171,7 @@ td .mdl-tooltip, th .mdl-tooltip {
 }
 
 .cms-table-header-action {
+    cursor: pointer;
 }
 
 .cms-form-input .material-icons {
@@ -163,6 +195,16 @@ td .mdl-tooltip, th .mdl-tooltip {
     overflow-x: auto;
 }
 
+.cms-table-cell-change {
+    color: red;
+    font-style: oblique;
+}
+
+.cms-table-cell-relationError {
+    color: red;
+    font-style: oblique;
+}
+
 .cms-table-query-expandable {
     padding: 0px;
 }
@@ -177,4 +219,8 @@ td .mdl-tooltip, th .mdl-tooltip {
 
 .cms-button-on {
     color: rgb(68, 138, 255);
+}
+
+.cms-table-tooltip-icon {
+    font-family: "Roboto", "Helvetica", "Arial", sans-serif;
 }

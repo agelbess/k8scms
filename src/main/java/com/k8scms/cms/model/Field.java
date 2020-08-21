@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,12 +18,9 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.model;
-
-import java.util.Map;
 
 public class Field {
 
@@ -38,10 +33,11 @@ public class Field {
     public static final String TYPE_DECIMAL = "decimal";
     public static final String TYPE_BOOLEAN = "boolean";
     public static final String TYPE_JSON = "json";
+    public static final String TYPE_ARRAY = "array";
     public static final String TYPE_EMAIL = "email";
     public static final String TYPE_PHONE = "phone";
-    public static final String TYPE_SECRET1 = "secret1"; // one way encryption
-    public static final String TYPE_SECRET2 = "secret2"; // two way encryption
+    public static final String ENCRYPTION_SECRET1 = "secret1"; // one way encryption
+    public static final String ENCRYPTION_SECRET2 = "secret2"; // two way encryption
     public static final String TYPE_CRON = "cron"; // cron expression
     public static final String TYPE_GEO_JSON = "geoJson"; // GeoJSON
 
@@ -53,10 +49,18 @@ public class Field {
 
     private boolean id;
     private String name;
+    private String label;
+    private boolean hidden;
+    private boolean required;
     private String type = TYPE_STRING;
-    private String relation;
+    // use it for validating arrays
+    private String arrayType;
+    private Relation relation;
+    private String virtual;
     private String regex;
-    private Map<String, Object> json;
+    private String charset;
+    private boolean ignoreValidationChanges;
+    private String encryption;
 
     public boolean isId() {
         return id;
@@ -74,6 +78,30 @@ public class Field {
         this.name = name;
     }
 
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    public boolean getHidden() {
+        return hidden;
+    }
+
+    public void setHidden(boolean hidden) {
+        this.hidden = hidden;
+    }
+
+    public boolean getRequired() {
+        return required;
+    }
+
+    public void setRequired(boolean required) {
+        this.required = required;
+    }
+
     public String getType() {
         return type;
     }
@@ -82,13 +110,30 @@ public class Field {
         this.type = type;
     }
 
-    public String getRelation() {
+    public String getArrayType() {
+        return arrayType;
+    }
+
+    public void setArrayType(String arrayType) {
+        this.arrayType = arrayType;
+    }
+
+    public Relation getRelation() {
         return relation;
     }
 
-    public void setRelation(String relation) {
+    public void setRelation(Relation relation) {
         this.relation = relation;
     }
+
+    public String getVirtual() {
+        return virtual;
+    }
+
+    public void setVirtual(String virtual) {
+        this.virtual = virtual;
+    }
+
 
     public String getRegex() {
         return regex;
@@ -98,11 +143,27 @@ public class Field {
         this.regex = regex;
     }
 
-    public Map<String, Object> getJson() {
-        return json;
+    public String getCharset() {
+        return charset;
     }
 
-    public void setJson(Map<String, Object> json) {
-        this.json = json;
+    public void setCharset(String charset) {
+        this.charset = charset;
+    }
+
+    public boolean getIgnoreValidationChanges() {
+        return ignoreValidationChanges;
+    }
+
+    public void setIgnoreValidationChanges(boolean ignoreValidationChanges) {
+        this.ignoreValidationChanges = ignoreValidationChanges;
+    }
+
+    public String getEncryption() {
+        return encryption;
+    }
+
+    public void setEncryption(String encryption) {
+        this.encryption = encryption;
     }
 }

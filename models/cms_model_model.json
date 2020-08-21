@@ -1,0 +1,71 @@
+{
+  "cluster": "${cms.cluster}",
+  "database": "${cms.database}",
+  "collection": "${cms.collection-model}",
+  "name": "cms-model",
+  "fields": [
+    {
+      "name": "_id",
+      "type": "oid"
+    },
+    {
+      "name": "cluster"
+    },
+    {
+      "name": "database"
+    },
+    {
+      "name": "collection"
+    },
+    {
+      "name": "name",
+      "id": true
+    },
+    {
+      "name": "fields",
+      "type": "array"
+    },
+    {
+      "name": "indexes",
+      "type": "array"
+    },
+    {
+      "name": "createDate",
+      "type": "date"
+    },
+    {
+      "name": "updateDate",
+      "type": "date"
+    }
+  ],
+  "systemFields": [
+    {
+      "name": "createDate",
+      "type": "postDate"
+    },
+    {
+      "name": "updateDate",
+      "type": "putPatchDate"
+    }
+  ],
+  "indexes": [
+    {
+      "index": {
+        "cluster": "1",
+        "database": "1",
+        "collection": "1"
+      },
+      "options": {
+        "unique": true
+      }
+    },
+    {
+      "index": {
+        "name": "1"
+      },
+      "options": {
+        "unique": true
+      }
+    }
+  ]
+}

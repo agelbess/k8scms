@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,21 +18,21 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.resource;
 
+import com.k8scms.cms.CmsProperties;
 import com.k8scms.cms.Constants;
 import com.k8scms.cms.SecretProperties;
 import com.k8scms.cms.filter.ApiLocalAuthenticationFilter;
 import com.k8scms.cms.model.Model;
+import com.k8scms.cms.model.Permissions;
 import com.k8scms.cms.mongo.MongoService;
 import com.k8scms.cms.service.LoginService;
 import com.k8scms.cms.service.ModelService;
 import com.k8scms.cms.utils.ModelUtils;
 import com.k8scms.cms.utils.Utils;
-import com.k8scms.cms.CmsProperties;
 import org.bson.Document;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.slf4j.Logger;
@@ -49,7 +47,7 @@ import java.util.stream.Collectors;
 @Path(Constants.BASE_PATH_WEB_API)
 public class WebApiResource {
 
-    private static final Logger log = LoggerFactory.getLogger(WebApiResource.class);
+    private static final Logger log = LoggerFactory.getLogger(com.k8scms.cms.resource.WebApiResource.class);
 
     @Inject
     CmsProperties cmsProperties;
@@ -73,7 +71,7 @@ public class WebApiResource {
     UriInfo uriInfo;
 
     @GET
-    @Path("/properties")
+    @Path("properties")
     @Produces(MediaType.APPLICATION_JSON)
     public CmsProperties getProperties() {
         log.debug("GET {}", uriInfo.getRequestUri());
@@ -82,34 +80,40 @@ public class WebApiResource {
 
     @ApiLocalAuthenticationFilter
     @GET
-    @Path("/user")
+    @Path("user")
     @Produces(MediaType.APPLICATION_JSON)
     public Document getUser() {
         log.debug("GET {}", uriInfo.getRequestUri());
         Document user = (Document) httpRequest.getAttribute(Constants.CONTEXT_PROPERTY_USER);
-        Model model = modelService.getModel(cmsProperties.getDatabase(), cmsProperties.getCollectionUser());
+        Model model = modelService.getModel(cmsProperties.getCluster(), cmsProperties.getDatabase(), cmsProperties.getCollectionUser());
 
-        ModelUtils.addRelations(user, model, mongoService, cmsProperties);
-        ModelUtils.toWire(user, model, secretProperties);
+        ModelUtils.addRelations(user, model, mongoService);
+        ModelUtils.toWire(user, model);
+        ModelUtils.encryptSecrets(user, model, secretProperties);
         return user;
     }
 
     // return the models which the user has GET access to
     @ApiLocalAuthenticationFilter
     @GET
-    @Path("/models")
+    @Path("models")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Model> getModels() {
         log.debug("GET {}", uriInfo.getRequestUri());
-        List<String> permissions = (List<String>) httpRequest.getAttribute(Constants.CONTEXT_PROPERTY_USER_PERMISSIONS);
+        List<Permissions> permissions = (List<Permissions>) httpRequest.getAttribute(Constants.CONTEXT_PROPERTY_USER_PERMISSIONS);
         return modelService.getModels().entrySet().stream()
                 .map(entry -> entry.getValue())
-                .filter(model -> Utils.hasPermission(model.getDatabase(), model.getCollection(), "GET", permissions))
+                .filter(model -> Utils.hasPermission(
+                        Optional.ofNullable(model.getCluster()).orElse(cmsProperties.getCluster()),
+                        model.getDatabase(),
+                        model.getCollection(),
+                        "GET",
+                        permissions))
                 .collect(Collectors.toList());
     }
 
     @POST
-    @Path("/login")
+    @Path("login")
     @Produces(MediaType.APPLICATION_JSON)
     public Response login(Document userNamePassword) {
         log.debug("POST {}", uriInfo.getRequestUri());
@@ -122,7 +126,7 @@ public class WebApiResource {
     }
 
     @GET
-    @Path("/logout")
+    @Path("logout")
     @Produces(MediaType.APPLICATION_JSON)
     public Response logout() {
         log.debug("GET {}", uriInfo.getRequestUri());
@@ -145,20 +149,55 @@ public class WebApiResource {
     }
 
     @POST
-    @Path("/{database}/{collection}/validate")
+    @Path("{database}/{collection}/validate")
     @Produces(MediaType.APPLICATION_JSON)
     public List<Document> validate(
-            @PathParam(ApiResource.PATH_PARAM_DATABASE) String database,
-            @PathParam(ApiResource.PATH_PARAM_COLLECTION) String collection,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_DATABASE) String database,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_COLLECTION) String collection,
             Document data) {
-        log.debug("GET {}", uriInfo.getRequestUri());
+        return validate(cmsProperties.getCluster(), database, collection, data);
+    }
 
-        Model model = modelService.getModel(database, collection);
-        return data.getList("data", HashMap.class).stream()
-                .map(map -> ModelUtils.fromWire(new Document(map), model, secretProperties))
-                .map(document -> ModelUtils.validate(document, model))
-                .map(document -> ModelUtils.toWire(document, model, secretProperties))
+    @POST
+    @Path("{cluster}/{database}/{collection}/validate")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Document> validate(
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_CLUSTER) String cluster,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_DATABASE) String database,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_COLLECTION) String collection,
+            Document data) {
+        log.debug("POST {}", uriInfo.getRequestUri());
+
+        Model model = modelService.getModel(cluster, database, collection);
+        List<Document> documents = data.getList("data", HashMap.class).stream()
+                .map(map -> ModelUtils.fromWire(new Document(map), model))
                 .collect(Collectors.toList());
+        ModelUtils.validate(documents, model);
+        return documents.stream()
+                .map(document -> ModelUtils.toWire(document, model))
+                .collect(Collectors.toList());
+    }
+
+    @POST
+    @Path("{cluster}/{database}/{collection}/validateAndFindValidMethods")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Document> validateAndFindValidMethods(
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_CLUSTER) String cluster,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_DATABASE) String database,
+            @PathParam(com.k8scms.cms.resource.ApiResource.PATH_PARAM_COLLECTION) String collection,
+            Document data) {
+        log.debug("POST {}", uriInfo.getRequestUri());
+
+        Model model = modelService.getModel(cluster, database, collection);
+        List<Document> documents = data.getList("data", HashMap.class).stream()
+                .map(map -> ModelUtils.fromWire(new Document(map), model))
+                .collect(Collectors.toList());
+        ModelUtils.validate(documents, model);
+        ModelUtils.findValidationChanges(mongoService, documents, model, secretProperties);
+        documents = documents.stream()
+                .map(document -> ModelUtils.toWire(document, model))
+                .collect(Collectors.toList());
+        return documents;
     }
 
     public NewCookie generateUIDCookie(Document user) {

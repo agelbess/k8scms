@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,16 +18,15 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.service;
 
+import com.k8scms.cms.CmsProperties;
 import com.k8scms.cms.Constants;
 import com.k8scms.cms.mongo.MongoService;
 import com.k8scms.cms.utils.Utils;
 import com.mongodb.client.model.IndexOptions;
-import com.k8scms.cms.CmsProperties;
 import io.quarkus.runtime.StartupEvent;
 import org.bson.Document;
 import org.slf4j.Logger;
@@ -38,9 +35,14 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
-import javax.json.bind.JsonbConfig;
-import java.util.Arrays;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
+import java.util.stream.Stream;
+
+import static java.nio.file.Files.readAllLines;
 
 @ApplicationScoped
 public class AppLifecycle {
@@ -65,47 +67,64 @@ public class AppLifecycle {
     @Inject
     ModelService modelService;
 
-    void onStart(@Observes StartupEvent ev) {
-        JsonbConfig jsonbConfig = new JsonbConfig();
-        jsonbConfig.setProperty(JsonbConfig.FORMATTING, true);
+    void onStart(@Observes StartupEvent ev) throws IOException {
         log.info("{}{}", Constants.ANSI_YELLOW, SPLASH);
         log.info("The application is starting with properties\nCms: {}",
                 Utils.stringify(cmsProperties));
         initModel();
     }
 
-    void initModel() {
-        Arrays.asList(
-                "/model/cms_model_log.json",
-                "/model/cms_model_model.json",
-                "/model/cms_model_role.json",
-                "/model/cms_model_user.json",
-                "/model/cms_model_scheduler.json",
-                "/model/cms_model_schedulerTask.json",
-                "/model/testDB_model_test.json")
-                .forEach(path -> {
-                            Document model = Document.parse(Utils.fromResourcePathToString(path));
+    void initModel() throws IOException {
+        try (Stream<Path> paths = Files.walk(Paths.get(cmsProperties.getModelsPath()))) {
+            paths
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.toString().endsWith(".json"))
+                    .forEach(path -> {
+                        try {
+                            String modelText = String.join("", readAllLines(path));
+                            String replaceProperties = Utils.replaceProperties(modelText);
+                            Document model = Document.parse(replaceProperties);
+                            log.debug("Start upserting");
+                            String cluster = model.getString("cluster");
+                            String database = model.getString("database");
+                            String collection = model.getString("collection");
+                            log.debug("Upserting model {}:{}:{}",
+                                    cluster,
+                                    database,
+                                    collection);
                             mongoService.put(
+                                    cmsProperties.getCluster(),
                                     cmsProperties.getDatabase(),
                                     cmsProperties.getCollectionModel(),
-                                    new Document("database", model.getString("database")).append("collection", model.getString("collection")),
+                                    new Document("cluster", cluster)
+                                            .append("database", database)
+                                            .append("collection", collection),
                                     model,
                                     true
-                            ).await().atMost(cmsProperties.getMongoTimeoutDuration());
+                            ).await().indefinitely();
+                        } catch (IOException e) {
+                            throw new RuntimeException("could not read model file", e);
                         }
-                );
+                    });
+        }
 
         // create the indexes
         modelService.getModels().forEach((key, model) -> {
             if (model.getIndexes() != null) {
                 model.getIndexes().forEach(modelIndex -> mongoService.createIndex(
+                        cmsProperties.getCluster(),
                         model.getDatabase(),
                         model.getCollection(),
                         modelIndex.getIndex(),
-                        new IndexOptions().unique(Optional.ofNullable(modelIndex.getOptions())
-                                .map(document -> document.getBoolean("unique"))
-                                .orElse(false))
-                ).await().atMost(cmsProperties.getMongoTimeoutDuration()));
+                        new IndexOptions()
+                                .unique(Optional.ofNullable(modelIndex.getOptions())
+                                        .map(document -> document.getBoolean("unique"))
+                                        .orElse(false))
+                                .background(Optional.ofNullable(modelIndex.getOptions())
+                                        .map(document -> document.getBoolean("background"))
+                                        .orElse(false)
+                                )
+                ).await().indefinitely());
             }
         });
     }

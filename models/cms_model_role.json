@@ -1,0 +1,55 @@
+{
+  "cluster": "${cms.cluster}",
+  "database": "${cms.database}",
+  "collection": "${cms.collection-role}",
+  "name": "cms-role",
+  "fields": [
+    {
+      "id": true,
+      "name": "_id",
+      "type": "oid"
+    },
+    {
+      "name": "name"
+    },
+    {
+      "name": "permissions",
+      "type": "array"
+    },
+    {
+      "name": "filters",
+      "type": "array"
+    },
+    {
+      "name": "description"
+    },
+    {
+      "name": "createDate",
+      "type": "date"
+    },
+    {
+      "name": "updateDate",
+      "type": "date"
+    }
+  ],
+  "systemFields": [
+    {
+      "name": "createDate",
+      "type": "postDate"
+    },
+    {
+      "name": "updateDate",
+      "type": "putPatchDate"
+    }
+  ],
+  "indexes": [
+    {
+      "index": {
+        "name": "1"
+      },
+      "options": {
+        "unique": true
+      }
+    }
+  ]
+}

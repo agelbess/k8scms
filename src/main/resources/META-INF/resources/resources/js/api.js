@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 (function () {
@@ -76,7 +73,7 @@
                 return $.ajax({
                     type: 'GET',
                     contentType: 'application/json',
-                    url: `/api/${model.database}/${model.collection}`,
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}`,
                     data: filter,
                     error: $.cms.utils.ajaxError
                 });
@@ -86,7 +83,7 @@
                 return $.ajax({
                     type: 'GET',
                     contentType: 'application/json',
-                    url: `/api/${model.database}/${model.collection}/meta`,
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}/meta`,
                     error: $.cms.utils.ajaxError
                 });
             }
@@ -97,7 +94,7 @@
                     contentType: 'application/json',
                     // TODO is that needed?
                     dataType: 'json',
-                    url: `/api/${model.database}/${model.collection}`,
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}`,
                     // TODO is stringify needed?
                     data: JSON.stringify(data),
                     error: $.cms.utils.ajaxError
@@ -112,7 +109,7 @@
                     type: 'POST',
                     contentType: 'application/json',
                     dataType: 'json',
-                    url: `/api/${model.database}/${model.collection}/GET`,
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}/GET`,
                     success: callback,
                     data: JSON.stringify(filter),
                     error: $.cms.utils.ajaxError
@@ -123,7 +120,17 @@
                 return $.ajax({
                     type: 'PUT',
                     contentType: 'application/json',
-                    url: `/api/${model.database}/${model.collection}?${$.param(filter)}`,
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}?${$.param(filter)}`,
+                    data: JSON.stringify(data),
+                    error: $.cms.utils.ajaxError
+                })
+            }
+
+            const patch = function (model, data, filter) {
+                return $.ajax({
+                    type: 'PATCH',
+                    contentType: 'application/json',
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}?${$.param(filter)}`,
                     data: JSON.stringify(data),
                     error: $.cms.utils.ajaxError
                 })
@@ -133,7 +140,7 @@
                 return $.ajax({
                     type: 'DELETE',
                     contentType: 'application/json',
-                    url: `/api/${model.database}/${model.collection}?${$.param(filter)}`,
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}?${$.param(filter)}`,
                     error: $.cms.utils.ajaxError
                 })
             }
@@ -143,7 +150,21 @@
                     type: 'POST',
                     contentType: 'application/json',
                     dataType: 'json',
-                    url: `/web-api/${model.database}/${model.collection}/validate`,
+                    url: `/web-api/${model.cluster}/${model.database}/${model.collection}/validate`,
+                    success: callback,
+                    data: JSON.stringify({
+                        data: data
+                    }),
+                    error: $.cms.utils.ajaxError
+                })
+            }
+
+            const validateAndFindValidMethods = function (model, data, callback) {
+                return $.ajax({
+                    type: 'POST',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    url: `/web-api/${model.cluster}/${model.database}/${model.collection}/validateAndFindValidMethods`,
                     success: callback,
                     data: JSON.stringify({
                         data: data
@@ -162,9 +183,11 @@
                 post: post,
                 postGet: postGet,
                 put: put,
+                patch: patch,
                 delete: delete_,
                 getMeta: getMeta,
                 validate: validate,
+                validateAndFindValidMethods: validateAndFindValidMethods,
             }
         }
 
