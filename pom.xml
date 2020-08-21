@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.k8scms</groupId>
     <artifactId>cms</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0</version>
     <properties>
         <surefire-plugin.version>2.22.0</surefire-plugin.version>
         <quarkus.version>1.5.2.Final</quarkus.version>

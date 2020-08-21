@@ -98,6 +98,20 @@
             }
             return spanE;
         }
+
+        const getSystemFieldIcon = function (systemField) {
+            let iconE;
+            switch (systemField.type) {
+                case 'postDate':
+                    iconE = $('<span>').addClass('material-icons').text('system_update_alt');
+                    break;
+                case 'putPatchDate':
+                    iconE = $('<span>').addClass('material-icons').text('system_update_alt');
+                    break;
+            }
+            return $('<span>').append(iconE);
+        }
+
         // reads cookies
         const getCookie = function (name) {
             var c = document.cookie.split('; ');
@@ -285,7 +299,7 @@
             return result;
         }
 
-        const replaceAll = function(target, replaceS, withS) {
+        const replaceAll = function (target, replaceS, withS) {
             while (target.includes(replaceS)) {
                 target = target.replace(replaceS, withS);
             }
@@ -311,6 +325,7 @@
             getIdFields: getIdFields,
             findFieldByName: findFieldByName,
             getFieldIcon: getFieldIcon,
+            getSystemFieldIcon: getSystemFieldIcon,
             getCookie: getCookie,
             setCookie: setCookie,
             equal: equal,

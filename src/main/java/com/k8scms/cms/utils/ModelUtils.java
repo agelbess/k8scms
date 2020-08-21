@@ -24,15 +24,13 @@ package com.k8scms.cms.utils;
 
 import com.k8scms.cms.Constants;
 import com.k8scms.cms.SecretProperties;
-import com.k8scms.cms.model.Field;
-import com.k8scms.cms.model.GetOptions;
-import com.k8scms.cms.model.Meta;
-import com.k8scms.cms.model.Model;
+import com.k8scms.cms.model.*;
 import com.k8scms.cms.mongo.MongoService;
 import org.bson.Document;
 import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
 
+import javax.ws.rs.HttpMethod;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -84,14 +82,14 @@ public class ModelUtils {
                 addMetaValidationError(meta, null, String.format("composite id '%s' already exists in collection's ids",
                         documentIds.values().stream().map(Object::toString).collect(Collectors.joining(","))));
             }
-            for (String id : documentIds.keySet()) {
-                addMetaValidationError(meta, id, String.format("id '%s' already exists in collection's ids", id));
+            for (Map.Entry<String, Object> entry : documentIds.entrySet()) {
+                addMetaValidationError(meta, entry.getKey(), String.format("id '%s' already exists in collection's ids", entry.getValue()));
             }
         } else {
             ids.add(documentIds);
         }
         for (Map.Entry<String, Object> entry : document.entrySet()) {
-            Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
+            Field field = ModelUtils.findField(model, entry.getKey());
             // check regex
             if (field.getRegex() != null) {
                 // use it also check for empty strings and nulls with the '\z' option
@@ -164,7 +162,7 @@ public class ModelUtils {
                 }
                 break;
             case Field.TYPE_INTEGER:
-                if (!(value instanceof Integer)) {
+                if (!(value instanceof Integer) && !(value instanceof Long)) {
                     addMetaValidationError(meta, fieldName, String.format("'%s' is not an integer is of type %s", value, value.getClass().getSimpleName()));
                 }
                 break;
@@ -299,7 +297,7 @@ public class ModelUtils {
             return "null";
         } else if (object instanceof List) {
             return ((List<Object>) object).stream()
-                    .map(com.k8scms.cms.utils.ModelUtils::toQuery)
+                    .map(ModelUtils::toQuery)
                     .collect(Collectors.joining(","));
         } else if (object instanceof ObjectId) {
             // need to escape $ for the String.replaceAll method
@@ -411,7 +409,7 @@ public class ModelUtils {
 
     public static Document toWire(Document document, Model model) {
         for (Map.Entry<String, Object> entry : document.entrySet()) {
-            Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
+            Field field = ModelUtils.findField(model, entry.getKey());
             entry.setValue(toWire(entry.getValue()));
         }
         return document;
@@ -419,7 +417,7 @@ public class ModelUtils {
 
     public static Document decryptSecrets(Document document, Model model, SecretProperties secretProperties) {
         for (Map.Entry<String, Object> entry : document.entrySet()) {
-            Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
+            Field field = ModelUtils.findField(model, entry.getKey());
             entry.setValue(decryptSecrets(field, entry.getValue(), secretProperties));
         }
         return document;
@@ -441,7 +439,7 @@ public class ModelUtils {
 
     public static Document encryptSecrets(Document document, Model model, SecretProperties secretProperties) {
         for (Map.Entry<String, Object> entry : document.entrySet()) {
-            Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
+            Field field = ModelUtils.findField(model, entry.getKey());
             entry.setValue(encryptSecrets(field, entry.getValue(), secretProperties));
         }
         return document;
@@ -465,7 +463,7 @@ public class ModelUtils {
     public static Document fromWire(Document document, Model model) {
         if (document != null) {
             for (Map.Entry<String, Object> entry : document.entrySet()) {
-                Field field = com.k8scms.cms.utils.ModelUtils.findField(model, entry.getKey());
+                Field field = ModelUtils.findField(model, entry.getKey());
                 entry.setValue(fromWire(field.getType(), field.getArrayType(), entry.getValue()));
             }
         }
@@ -518,5 +516,28 @@ public class ModelUtils {
             }
         }
         return result;
+    }
+
+    public static Document applySystemFields(String httpMethod, Document data, Model model) {
+        switch (httpMethod) {
+            case HttpMethod.POST:
+                Optional.ofNullable(model.getSystemFields())
+                        .map(List::stream)
+                        .ifPresent(systemFieldStream -> systemFieldStream
+                                .filter(systemField -> SystemField.TYPE_POST_DATE.equals(systemField.getType()))
+                                .forEach(systemField -> data.put(systemField.getName(), new Date()))
+                        );
+                break;
+            case HttpMethod.PUT:
+            case HttpMethod.PATCH:
+                Optional.ofNullable(model.getSystemFields())
+                        .map(List::stream)
+                        .ifPresent(systemFieldStream -> systemFieldStream
+                                .filter(systemField -> SystemField.TYPE_PUT_PATCH_DATE.equals(systemField.getType()))
+                                .forEach(systemField -> data.put(systemField.getName(), new Date()))
+                        );
+                break;
+        }
+        return data;
     }
 }

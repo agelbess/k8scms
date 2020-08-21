@@ -22,43 +22,12 @@
 
 package com.k8scms.cms.model;
 
-import java.util.List;
+public class SystemField {
+    public static final String TYPE_POST_DATE = "postDate";
+    public static final String TYPE_PUT_PATCH_DATE = "putPatchDate";
 
-public class Model {
-    private String cluster;
-    private String database;
-    private String collection;
     private String name;
-    private List<Field> fields;
-    private List<ModelIndex> indexes;
-    private List<SystemField> systemFields;
-
-    public Model() {
-    }
-
-    public String getCluster() {
-        return cluster;
-    }
-
-    public void setCluster(String cluster) {
-        this.cluster = cluster;
-    }
-
-    public String getDatabase() {
-        return database;
-    }
-
-    public void setDatabase(String database) {
-        this.database = database;
-    }
-
-    public String getCollection() {
-        return collection;
-    }
-
-    public void setCollection(String collection) {
-        this.collection = collection;
-    }
+    private String type;
 
     public String getName() {
         return name;
@@ -68,27 +37,11 @@ public class Model {
         this.name = name;
     }
 
-    public List<Field> getFields() {
-        return fields;
+    public String getType() {
+        return type;
     }
 
-    public void setFields(List<Field> fields) {
-        this.fields = fields;
-    }
-
-    public List<ModelIndex> getIndexes() {
-        return indexes;
-    }
-
-    public void setIndexes(List<ModelIndex> indexes) {
-        this.indexes = indexes;
-    }
-
-    public List<SystemField> getSystemFields() {
-        return systemFields;
-    }
-
-    public void setSystemFields(List<SystemField> systemFields) {
-        this.systemFields = systemFields;
+    public void setType(String type) {
+        this.type = type;
     }
 }

@@ -23,22 +23,24 @@
 package com.k8scms.cms.service;
 
 import com.k8scms.cms.CmsProperties;
+import com.k8scms.cms.model.Model;
 import com.k8scms.cms.mongo.MongoService;
+import com.k8scms.cms.utils.ModelUtils;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.UriInfo;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
 import java.util.Optional;
 
 @ApplicationScoped
 public class LogService {
-    private static final Logger logger = LoggerFactory.getLogger(com.k8scms.cms.service.LogService.class);
+    private static final Logger logger = LoggerFactory.getLogger(LogService.class);
 
     @Inject
     MongoService mongoService;
@@ -66,12 +68,13 @@ public class LogService {
             log.put("uri", URLDecoder.decode(uriInfo.getRequestUri().toString(), StandardCharsets.UTF_8));
             log.put("userName", userName);
             Optional.ofNullable(body).ifPresent(b -> log.put("body", body));
-            log.put("date", new Date());
+            Model logModel = modelService.getModel(cmsProperties.getCluster(), cmsProperties.getDatabase(), cmsProperties.getCollectionLog());
+            ModelUtils.applySystemFields(HttpMethod.POST, log, logModel);
             logger.info(log.toJson());
             mongoService.post(
-                    cmsProperties.getCluster(),
-                    cmsProperties.getDatabase(),
-                    cmsProperties.getCollectionLog(),
+                    logModel.getCluster(),
+                    logModel.getDatabase(),
+                    logModel.getCollection(),
                     log)
                     .await()
                     .indefinitely();

@@ -1,6 +1,6 @@
 [
   {
-    "cluster": "cms",
+    "cluster": "loans",
     "database": "loans",
     "collection": "loan",
     "name": "loan",
@@ -44,6 +44,24 @@
         "name": "duration",
         "label": "duration (years)",
         "type": "integer"
+      },
+      {
+        "name": "createDate",
+        "type": "date"
+      },
+      {
+        "name": "updateDate",
+        "type": "date"
+      }
+    ],
+    "systemFields": [
+      {
+        "name": "createDate",
+        "type": "postDate"
+      },
+      {
+        "name": "updateDate",
+        "type": "putPatchDate"
       }
     ]
   }

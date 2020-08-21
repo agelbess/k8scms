@@ -49,6 +49,24 @@
     {
       "name": "filters",
       "type": "array"
+    },
+    {
+      "name": "createDate",
+      "type": "date"
+    },
+    {
+      "name": "updateDate",
+      "type": "date"
+    }
+  ],
+  "systemFields": [
+    {
+      "name": "createDate",
+      "type": "postDate"
+    },
+    {
+      "name": "updateDate",
+      "type": "putPatchDate"
     }
   ],
   "indexes": [

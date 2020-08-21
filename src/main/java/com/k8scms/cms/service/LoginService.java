@@ -25,17 +25,23 @@ package com.k8scms.cms.service;
 import com.k8scms.cms.CmsProperties;
 import com.k8scms.cms.Constants;
 import com.k8scms.cms.SecretProperties;
+import com.k8scms.cms.model.Model;
 import com.k8scms.cms.mongo.MongoService;
+import com.k8scms.cms.utils.ModelUtils;
 import com.k8scms.cms.utils.Utils;
 import io.quarkus.security.UnauthorizedException;
 import org.bson.Document;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.ws.rs.HttpMethod;
 import java.util.Arrays;
 
 @ApplicationScoped
 public class LoginService {
+
+    @Inject
+    ModelService modelService;
 
     @Inject
     MongoService mongoService;
@@ -110,6 +116,8 @@ public class LoginService {
                 userNamePassword.getString("password"),
                 secretProperties.getSecretEncryptionKey()
         ));
+        Model model = modelService.getModel(cmsProperties.getCluster(), cmsProperties.getDatabase(), cmsProperties.getCollectionUser());
+        ModelUtils.applySystemFields(HttpMethod.POST, user, model);
         mongoService.post(
                 cmsProperties.getCluster(),
                 cmsProperties.getDatabase(),

@@ -195,6 +195,7 @@ public class ApiResource {
         Model model = modelService.getModel(cluster, database, collection);
         ModelUtils.fromWire(data, model);
         ModelUtils.encryptSecrets(data, model, secretProperties);
+        ModelUtils.applySystemFields(httpRequest.getHttpMethod(), data, model);
 
         return mongoService.post(cluster, database, collection, data).map(insertOneResult -> {
                     MethodResult methodResult = new MethodResult();
@@ -299,6 +300,7 @@ public class ApiResource {
         Document filter = Utils.filterFromUriInfo(uriInfo);
         applyUserFilters(httpRequest, cluster, database, collection, filter);
         ModelUtils.fromWire(filter, model);
+        ModelUtils.applySystemFields(httpRequest.getHttpMethod(), data, model);
 
         return mongoService.put(cluster, database, collection, filter, data, true).map(updateResult -> {
             MethodResult methodResult = new MethodResult();
@@ -352,6 +354,7 @@ public class ApiResource {
         Document filter = Utils.filterFromUriInfo(uriInfo);
         applyUserFilters(httpRequest, cluster, database, collection, filter);
         ModelUtils.fromWire(filter, model);
+        ModelUtils.applySystemFields(httpRequest.getHttpMethod(), data, model);
 
         return mongoService.patch(cluster, database, collection, filter, data, true).map(updateResult -> {
             MethodResult methodResult = new MethodResult();

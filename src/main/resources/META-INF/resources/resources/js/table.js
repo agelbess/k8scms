@@ -313,6 +313,11 @@
                         .addClass(f.id ? 'cms-table-id' : '')
                         .appendTo(headerRowE);
                     $.cms.utils.getFieldIcon(f).addClass('cms-table-header-type').appendTo(headerE);
+                    if (model.systemFields) {
+                        model.systemFields.filter(sf => sf.name === f.name).forEach(sf => {
+                            $.cms.utils.getSystemFieldIcon(sf).addClass('cms-table-header-type').appendTo(headerE);
+                        });
+                    }
                     let headerNameE = $('<span>').text(f.label || f.name).appendTo(headerE);
                     if (f.virtual) {
                         headerNameE.addClass('cms-table-header-virtual');
