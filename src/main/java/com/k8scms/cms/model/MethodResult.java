@@ -23,12 +23,17 @@
 
 package com.k8scms.cms.model;
 
+import com.mongodb.bulk.BulkWriteError;
+
+import java.util.List;
+
 public class MethodResult {
     private Long modifiedCount;
     private Long deleteCount;
     private Long matchedCount;
-    private String insertedId;
-    private String upsertedId;
+    private List<String> insertedIds;
+    private List<String> upsertedIds;
+    private List<BulkWriteError> bulkWriteErrors;
 
     public Long getModifiedCount() {
         return modifiedCount;
@@ -54,19 +59,27 @@ public class MethodResult {
         this.matchedCount = matchedCount;
     }
 
-    public String getInsertedId() {
-        return insertedId;
+    public List<String> getInsertedIds() {
+        return insertedIds;
     }
 
-    public void setInsertedId(String insertedId) {
-        this.insertedId = insertedId;
+    public void setInsertedIds(List<String> insertedIds) {
+        this.insertedIds = insertedIds;
     }
 
-    public String getUpsertedId() {
-        return upsertedId;
+    public List<String> getUpsertedIds() {
+        return upsertedIds;
     }
 
-    public void setUpsertedId(String upsertedId) {
-        this.upsertedId = upsertedId;
+    public void setUpsertedIds(List<String> upsertedIds) {
+        this.upsertedIds = upsertedIds;
+    }
+
+    public List<BulkWriteError> getBulkWriteErrors() {
+        return bulkWriteErrors;
+    }
+
+    public void setBulkWriteErrors(List<BulkWriteError> bulkWriteErrors) {
+        this.bulkWriteErrors = bulkWriteErrors;
     }
 }

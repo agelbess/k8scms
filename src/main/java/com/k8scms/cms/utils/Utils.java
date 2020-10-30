@@ -29,6 +29,7 @@ import com.k8scms.cms.model.GetOptions;
 import com.k8scms.cms.model.Permissions;
 import io.quarkus.security.UnauthorizedException;
 import org.bson.Document;
+import org.bson.types.Decimal128;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jasypt.util.text.BasicTextEncryptor;
 import org.mindrot.jbcrypt.BCrypt;
@@ -45,7 +46,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -90,56 +90,28 @@ public class Utils {
         return new BufferedReader(new InputStreamReader(inputStream)).lines().collect(Collectors.joining("\n"));
     }
 
-    public static Document filterFromUriInfo(UriInfo uriInfo) {
+    public static Document documentFromUriInfo(UriInfo uriInfo) {
         Document filter = new Document();
         uriInfo.getQueryParameters().forEach(
                 (key, values) -> {
-                    if (!Arrays.asList(Constants.GET_OPTIONS_QUERY_PARAMS).contains(key)) {
-                        filter.put(key, toObject(values.get(0)));
-                    }
+                    filter.put(key, values.get(0));
                 }
         );
         return filter;
     }
 
-    public static Document filterFromDocument(Document document) {
+    public static Document getDocumentWithoutGetOptions(Document document) {
         Document filter = new Document();
-        document.forEach((key, value) -> {
-            if (!Arrays.asList(Constants.GET_OPTIONS_QUERY_PARAMS).contains(key)) {
-                filter.put(key, value);
+        document.entrySet().forEach(entry -> {
+            if (!Arrays.asList(Constants.GET_OPTIONS_QUERY_PARAMS).contains(entry.getKey())) {
+                filter.put(entry.getKey(), entry.getValue());
             }
         });
         return filter;
     }
 
-    public static GetOptions getOptionsFromUriInfo(UriInfo uriInfo) {
-        GetOptions getOptions = new GetOptions();
-        uriInfo.getQueryParameters().forEach(
-                (key, values) -> {
-                    if (values != null && !values.isEmpty()) {
-                        String value = values.get(0);
-                        switch (key) {
-                            case Constants.QUERY_PARAM_SORT:
-                                getOptions.setSort(value);
-                                break;
-                            case Constants.QUERY_PARAM_SORT_DIRECTION:
-                                getOptions.setSortDirection(Integer.parseInt(value));
-                                break;
-                            case Constants.QUERY_PARAM_SKIP:
-                                getOptions.setSkip(Integer.parseInt(value));
-                                break;
-                            case Constants.QUERY_PARAM_LIMIT:
-                                getOptions.setLimit(Integer.parseInt(value));
-                                break;
-                        }
-                    }
-                }
-        );
-        return getOptions;
-    }
-
     // all values are passed as string
-    public static GetOptions getOptionsFromDocument(Document document) {
+    public static GetOptions getGetOptionsFromDocument(Document document) {
         GetOptions getOptions = new GetOptions();
         document.forEach(
                 (key, value) -> {
@@ -148,27 +120,21 @@ public class Utils {
                             getOptions.setSort((String) value);
                             break;
                         case Constants.QUERY_PARAM_SORT_DIRECTION:
-                            getOptions.setSortDirection(((BigDecimal) value).intValue());
+                            getOptions.setSortDirection(((Decimal128) value).intValue());
                             break;
                         case Constants.QUERY_PARAM_SKIP:
-                            getOptions.setSkip(((BigDecimal) value).intValue());
+                            getOptions.setSkip(((Decimal128) value).intValue());
                             break;
                         case Constants.QUERY_PARAM_LIMIT:
-                            getOptions.setLimit(((BigDecimal) value).intValue());
+                            getOptions.setLimit(((Decimal128) value).intValue());
+                            break;
+                        case Constants.QUERY_PARAM_NO_LIMIT:
+                            getOptions.setNoLimit(Boolean.parseBoolean(value.toString()));
                             break;
                     }
                 }
         );
         return getOptions;
-    }
-
-    private static Object toObject(String value) {
-        if (value.startsWith("{")) {
-            // its a JSON
-            return Document.parse("{'k' : " + value + "}").get("k");
-        } else {
-            return value;
-        }
     }
 
     private static String toHexString(byte[] bytes) {
@@ -275,7 +241,7 @@ public class Utils {
     }
 
     public static String replaceProperties(String text) {
-        return replaceProperties(text, (property) -> ConfigProvider.getConfig().getValue(property, String.class));
+        return replaceProperties(text, property -> ConfigProvider.getConfig().getValue(property, String.class));
     }
 
     static String replaceProperties(String text, Function<String, String> supplier) {

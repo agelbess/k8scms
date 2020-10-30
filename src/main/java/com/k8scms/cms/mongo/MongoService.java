@@ -25,15 +25,12 @@ package com.k8scms.cms.mongo;
 import com.k8scms.cms.CmsProperties;
 import com.k8scms.cms.model.CollectionMeta;
 import com.k8scms.cms.model.GetOptions;
+import com.k8scms.cms.resource.DataFilter;
 import com.mongodb.ConnectionString;
+import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoClientSettings;
-import com.mongodb.client.model.FindOneAndUpdateOptions;
-import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.ReplaceOptions;
-import com.mongodb.client.model.UpdateOptions;
-import com.mongodb.client.result.DeleteResult;
-import com.mongodb.client.result.InsertOneResult;
-import com.mongodb.client.result.UpdateResult;
+import com.mongodb.bulk.BulkWriteResult;
+import com.mongodb.client.model.*;
 import com.mongodb.reactivestreams.client.MongoClients;
 import io.quarkus.mongodb.FindOptions;
 import io.quarkus.mongodb.impl.ReactiveMongoClientImpl;
@@ -49,11 +46,9 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @ApplicationScoped
 public class MongoService {
@@ -82,7 +77,6 @@ public class MongoService {
                             builder.maxWaitTime(cmsProperties.getMongoTimeout(), TimeUnit.SECONDS);
                         })
                         .build();
-                logger.debug("Adding client '{}'", clusterTokens[0]);
                 mongoClients.put(clusterTokens[0], new ReactiveMongoClientImpl(MongoClients.create(mongoClientSettings)));
             } catch (NoSuchElementException e) {
                 // expected
@@ -129,7 +123,12 @@ public class MongoService {
         if (getOptions.getLimit() != null) {
             findOptions.limit(Math.min(getOptions.getLimit(), cmsProperties.getLimit()));
         } else {
-            findOptions.limit(cmsProperties.getLimit());
+            if (getOptions.getNoLimit()) {
+                // no limit
+                logger.debug("get without limit");
+            } else {
+                findOptions.limit(cmsProperties.getLimit());
+            }
         }
 
         return findMongoClient(cluster).getDatabase(database)
@@ -148,37 +147,70 @@ public class MongoService {
                 });
     }
 
-    public Uni<InsertOneResult> post(String cluster, String database, String collection, Document data) {
+    public Uni<BulkWriteResult> post(String cluster, String database, String collection, List<Document> data, boolean ordered) {
+        return bulkWrite(
+                cluster,
+                database,
+                collection,
+                data.stream().map(InsertOneModel::new).collect(Collectors.toList()),
+                ordered);
+    }
+
+    // when updating from the UI form the _id is used, on upload the field id
+    public Uni<BulkWriteResult> put(String cluster, String database, String collection, List<DataFilter> dataFilters, boolean upsert, boolean ordered) {
+        List<ReplaceOneModel<Document>> replaceOneModels = new ArrayList<>();
+        dataFilters.forEach(dataFilter -> {
+            ReplaceOneModel<Document> replaceOneModel = new ReplaceOneModel<>(dataFilter.getFilter(), dataFilter.getData(), new ReplaceOptions().upsert(upsert));
+            replaceOneModels.add(replaceOneModel);
+        });
+        return bulkWrite(
+                cluster,
+                database,
+                collection,
+                replaceOneModels,
+                ordered);
+    }
+
+    public Uni<BulkWriteResult> patch(String cluster, String database, String collection, List<DataFilter> dataFilters, boolean upsert, boolean ordered) {
+        List<UpdateOneModel<Document>> updateOneModels = new ArrayList<>();
+        dataFilters.forEach(dataFilter -> {
+            UpdateOneModel<Document> updateOneModel = new UpdateOneModel<>(dataFilter.getFilter(), new Document("$set", dataFilter.getData()), new UpdateOptions().upsert(upsert));
+
+            updateOneModels.add(updateOneModel);
+        });
+        return bulkWrite(
+                cluster,
+                database,
+                collection,
+                updateOneModels,
+                ordered);
+    }
+
+    public Uni<BulkWriteResult> delete(String cluster, String database, String collection, List<Document> filters, boolean ordered) {
+        List<DeleteOneModel<Document>> deleteOneModels = new ArrayList<>();
+        filters.forEach(filter -> {
+            DeleteOneModel<Document> deleteOneModel = new DeleteOneModel<>(filter);
+            deleteOneModels.add(deleteOneModel);
+        });
+        return bulkWrite(
+                cluster,
+                database,
+                collection,
+                deleteOneModels,
+                ordered);
+    }
+
+    private Uni<BulkWriteResult> bulkWrite(String cluster, String database, String collection, List<? extends WriteModel<Document>> writeModels, boolean ordered) {
         return findMongoClient(cluster).getDatabase(database)
                 .getCollection(collection)
-                .insertOne(data);
-    }
-
-    public Uni<UpdateResult> put(String cluster, String database, String collection, Document filter, Document data) {
-        return put(cluster, database, collection, filter, data, false);
-    }
-
-    public Uni<UpdateResult> put(String cluster, String database, String collection, Document filter, Document data, boolean upsert) {
-        return findMongoClient(cluster).getDatabase(database)
-                .getCollection(collection)
-                .replaceOne(filter, data, new ReplaceOptions().upsert(upsert));
-    }
-
-    public Uni<UpdateResult> patch(String cluster, String database, String collection, Document filter, Document data, boolean upsert) {
-        return mongoClients.get(cluster).getDatabase(database)
-                .getCollection(collection)
-                .updateOne(filter, new Document("$set", data), new UpdateOptions().upsert(upsert));
-    }
-
-    public Uni<DeleteResult> delete(String cluster, String database, String collection, Document filter) {
-        return findMongoClient(cluster).getDatabase(database)
-                .getCollection(collection)
-                .deleteMany(filter);
-    }
-
-    public Uni<Document> findOneAndUpdate(String cluster, String database, String collection, Document filter, Document data, FindOneAndUpdateOptions findOneAndUpdateOptions) {
-        return mongoClients.get(cluster).getDatabase(database)
-                .getCollection(collection)
-                .findOneAndUpdate(filter, data, findOneAndUpdateOptions);
+                .bulkWrite(writeModels, new BulkWriteOptions().ordered(ordered))
+                .onFailure()
+                .recoverWithItem(throwable -> {
+                    if (throwable instanceof MongoBulkWriteException) {
+                        return new MongoBulkWriteExceptionBulkWriteResult((MongoBulkWriteException) throwable);
+                    } else {
+                        throw new RuntimeException(throwable);
+                    }
+                });
     }
 }

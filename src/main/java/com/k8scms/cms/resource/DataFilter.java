@@ -20,28 +20,27 @@
  * SOFTWARE.
  */
 
-package com.k8scms.cms;
+package com.k8scms.cms.resource;
 
-import io.quarkus.arc.config.ConfigProperties;
+import org.bson.Document;
 
-import java.util.Optional;
+public class DataFilter {
+    private Document data;
+    private Document filter;
 
-@ConfigProperties()
-public interface SecretProperties {
+    public Document getData() {
+        return data;
+    }
 
-    String getSessionEncryptionKey();
+    public void setData(Document data) {
+        this.data = data;
+    }
 
-    int getSessionTimeout();
+    public Document getFilter() {
+        return filter;
+    }
 
-    String getSecretEncryptionKey();
-
-    String getLdapUrl();
-
-    Optional<String> getLdapProtocol();
-
-    String getLdapAuthentication();
-
-    String getLdapAdminUsername();
-
-    String getLdapAdminPassword();
+    public void setFilter(Document filter) {
+        this.filter = filter;
+    }
 }

@@ -36,6 +36,8 @@ import javax.ws.rs.HttpMethod;
 import javax.ws.rs.core.UriInfo;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @ApplicationScoped
@@ -51,13 +53,27 @@ public class LogService {
     @Inject
     CmsProperties cmsProperties;
 
+    public void log(String cluster, String database, String collection, String method, List<Document> bodyAsArray, String userName, UriInfo uriInfo) {
+        // do not log secrets
+        bodyAsArray.forEach(body -> doNotLogSecrets(cluster, database, collection, body));
+        logBoth(cluster, database, collection, method, bodyAsArray, userName, uriInfo);
+    }
+
     public void log(String cluster, String database, String collection, String method, Document body, String userName, UriInfo uriInfo) {
         // do not log secrets
         if (body != null) {
-            modelService.getModel(cluster, database, collection).getFields().stream()
-                    .filter(f -> f.getEncryption() != null)
-                    .forEach(field -> body.put(field.getName(), "********"));
+            doNotLogSecrets(cluster, database, collection, body);
         }
+        logBoth(cluster, database, collection, method, body, userName, uriInfo);
+    }
+
+    private void doNotLogSecrets(String cluster, String database, String collection, Document body) {
+        modelService.getModel(cluster, database, collection).getFields().stream()
+                .filter(f -> f.getEncryption() != null)
+                .forEach(field -> body.put(field.getName(), "********"));
+    }
+
+    private void logBoth(String cluster, String database, String collection, String method, Object body, String userName, UriInfo uriInfo) {
 
         if ((String.format("%s:%s:%s:%s", cluster, database, collection, method)).matches(cmsProperties.getLog())) {
             Document log = new Document();
@@ -75,7 +91,8 @@ public class LogService {
                     logModel.getCluster(),
                     logModel.getDatabase(),
                     logModel.getCollection(),
-                    log)
+                    Collections.singletonList(log),
+                    true)
                     .await()
                     .indefinitely();
         }

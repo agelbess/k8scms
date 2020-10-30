@@ -1,4 +1,3 @@
-
 /*
  * MIT License
  * Copyright (c) 2020 Alexandros Gelbessis
@@ -28,32 +27,32 @@ import io.quarkus.arc.config.ConfigProperties;
 @ConfigProperties()
 public interface CmsProperties {
 
-    public String getProjectName();
+    String getProjectName();
 
-    public String getEnv();
+    String getEnv();
 
-    public String getLog();
+    String getLog();
 
-    public Integer getLimit();
+    Integer getLimit();
 
-    public Integer getPageSize();
+    Integer getPageSize();
 
-    public String getDatabase();
+    String getDatabase();
 
-    public String getCollectionModel();
+    String getCollectionModel();
 
-    public String getCollectionUser();
+    String getCollectionUser();
 
-    public String getCollectionRole();
+    String getCollectionRole();
 
-    public String getCollectionLog();
+    String getCollectionLog();
 
-    public String getErrorContact();
+    String getErrorContact();
 
-    public String getModelsPath();
+    String getModelsPath();
 
-    public String getCluster();
+    String getCluster();
 
-    public Long getMongoTimeout();
+    Long getMongoTimeout();
 
 }

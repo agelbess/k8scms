@@ -244,9 +244,11 @@ public final class CronExpression {
 
     public static final int MAX_YEAR = Calendar.getInstance().get(Calendar.YEAR) + 100;
     public static final Calendar MIN_CAL = Calendar.getInstance();
+
     static {
         MIN_CAL.set(1970, 0, 1);
     }
+
     public static final Date MIN_DATE = MIN_CAL.getTime();
 
     /**
@@ -256,7 +258,7 @@ public final class CronExpression {
      * @param cronExpression String representation of the cron expression the
      *                       new object should represent
      * @throws ParseException if the string expression cannot be parsed into a valid
-     *                                  <CODE>CronExpression</CODE>
+     *                        <CODE>CronExpression</CODE>
      */
     public CronExpression(final String cronExpression) throws ParseException {
         if (cronExpression == null) {

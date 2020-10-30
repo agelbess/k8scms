@@ -42,6 +42,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -81,13 +82,30 @@ public class ApiLogging implements ContainerRequestFilter {
                 .lines().collect(Collectors.joining("\n"));
         containerRequestContext.setEntityStream(new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
 
-        logService.log(
-                cluster,
-                database,
-                collection,
-                method,
-                body.isEmpty() ? null : Document.parse(body),
-                user.getString("name"),
-                containerRequestContext.getUriInfo());
+        Object bodyObject = null;
+        if (!body.isEmpty()) {
+            bodyObject = Document.parse("{\"json\":" + body + "}").get("json");
+        }
+        if (bodyObject instanceof Document) {
+            logService.log(
+                    cluster,
+                    database,
+                    collection,
+                    method,
+                    // bodyObject instanceof Document?(Document) bodyObject: (List<Document>)bodyObject,
+                    (Document) bodyObject,
+                    user.getString("name"),
+                    containerRequestContext.getUriInfo());
+        } else if (bodyObject instanceof List){
+            logService.log(
+                    cluster,
+                    database,
+                    collection,
+                    method,
+                    // bodyObject instanceof Document?(Document) bodyObject: (List<Document>)bodyObject,
+                    (List<Document>) bodyObject,
+                    user.getString("name"),
+                    containerRequestContext.getUriInfo());
+        }
     }
 }

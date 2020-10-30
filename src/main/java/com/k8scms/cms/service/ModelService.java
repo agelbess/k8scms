@@ -23,6 +23,7 @@
 package com.k8scms.cms.service;
 
 import com.k8scms.cms.CmsProperties;
+import com.k8scms.cms.exception.ModelNotFoundException;
 import com.k8scms.cms.model.Model;
 import com.k8scms.cms.mongo.MongoService;
 import com.k8scms.cms.utils.Utils;
@@ -32,9 +33,6 @@ import org.bson.Document;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -77,7 +75,7 @@ public class ModelService {
     public Model getModel(String cluster, String database, String collection) {
         Model model = models.get(String.format("%s.%s.%s", cluster, database, collection));
         if (model == null) {
-            throw new NotFoundException(Response.status(Response.Status.NOT_FOUND).entity(String.format("Model %s.%s.%s not found", cluster, database, collection)).type(MediaType.TEXT_PLAIN).build());
+            throw new ModelNotFoundException(String.format("Model %s.%s.%s not found", cluster, database, collection));
         } else {
             return model;
         }

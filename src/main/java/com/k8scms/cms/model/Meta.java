@@ -29,9 +29,14 @@ import java.util.Optional;
 
 public class Meta {
 
+    public enum UPLOAD_RESULT {
+        INSERT,
+        UPDATE
+    }
+
     public Map<String, List<String>> validationErrors;
-    // METHOD, field.name, message
-    public Map<String, String> validationChanges;
+    // UPLOADRESULT, {fieldName: message}
+    public Map<UPLOAD_RESULT, Map<String, String>> uploadResults;
 
     public Map<String, String> relationFilters;
 
@@ -46,12 +51,12 @@ public class Meta {
         this.validationErrors = validationErrors;
     }
 
-    public Map<String, String> getValidationChanges() {
-        return validationChanges;
+    public Map<UPLOAD_RESULT, Map<String, String>> getUploadResults() {
+        return uploadResults;
     }
 
-    public void setValidationChanges(Map<String, String> validationChanges) {
-        this.validationChanges = validationChanges;
+    public void setUploadResults(Map<UPLOAD_RESULT, Map<String, String>> uploadResults) {
+        this.uploadResults = uploadResults;
     }
 
     public Map<String, String> getRelationFilters() {

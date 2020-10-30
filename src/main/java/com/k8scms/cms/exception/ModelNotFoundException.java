@@ -20,28 +20,10 @@
  * SOFTWARE.
  */
 
-package com.k8scms.cms;
+package com.k8scms.cms.exception;
 
-import io.quarkus.arc.config.ConfigProperties;
-
-import java.util.Optional;
-
-@ConfigProperties()
-public interface SecretProperties {
-
-    String getSessionEncryptionKey();
-
-    int getSessionTimeout();
-
-    String getSecretEncryptionKey();
-
-    String getLdapUrl();
-
-    Optional<String> getLdapProtocol();
-
-    String getLdapAuthentication();
-
-    String getLdapAdminUsername();
-
-    String getLdapAdminPassword();
+public class ModelNotFoundException extends RuntimeException{
+    public ModelNotFoundException(String message) {
+        super(message);
+    }
 }

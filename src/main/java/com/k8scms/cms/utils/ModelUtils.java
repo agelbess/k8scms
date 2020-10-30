@@ -29,6 +29,8 @@ import com.k8scms.cms.mongo.MongoService;
 import org.bson.Document;
 import org.bson.types.Decimal128;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.HttpMethod;
 import java.io.UnsupportedEncodingException;
@@ -39,6 +41,27 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ModelUtils {
+
+    private static final Logger log = LoggerFactory.getLogger(ModelUtils.class);
+
+    enum VALIDATION_TYPE {
+        ID,
+        VALUE_REGEX,
+        VALUE_CHARSET,
+        REQUIRED,
+        MISSING_FROM_MODEL,
+        TYPE_NOT_STRING,
+        TYPE_NOT_BOOLEAN,
+        TYPE_NOT_DATE,
+        TYPE_NOT_JSON,
+        TYPE_NOT_INTEGER,
+        TYPE_NOT_DECIMAL,
+        TYPE_NOT_OID,
+        TYPE_NOT_CRON,
+        TYPE_NOT_EMAIL,
+        TYPE_NOT_PHONE,
+        TYPE_NOT_GEO_JSON
+    }
 
     private ModelUtils() {
     }
@@ -79,11 +102,13 @@ public class ModelUtils {
         // Map already implements equals
         if (ids.contains(documentIds)) {
             if (idFields.size() > 1) {
-                addMetaValidationError(meta, null, String.format("composite id '%s' already exists in collection's ids",
-                        documentIds.values().stream().map(Object::toString).collect(Collectors.joining(","))));
-            }
-            for (Map.Entry<String, Object> entry : documentIds.entrySet()) {
-                addMetaValidationError(meta, entry.getKey(), String.format("id '%s' already exists in collection's ids", entry.getValue()));
+                String key = String.join(",", documentIds.keySet());
+                addMetaValidationError(meta, key, VALIDATION_TYPE.ID, String.format("composite id '%s' already exists in collection's ids",
+                        documentIds.values().stream().map(value -> value + "").collect(Collectors.joining(","))));
+            } else {
+                for (Map.Entry<String, Object> entry : documentIds.entrySet()) {
+                    addMetaValidationError(meta, entry.getKey(), VALIDATION_TYPE.ID, String.format("id '%s' already exists in collection's ids", entry.getValue()));
+                }
             }
         } else {
             ids.add(documentIds);
@@ -96,32 +121,31 @@ public class ModelUtils {
                 Object value = document.get(field.getName());
                 String valueS = value == null ? "" : value.toString();
                 if (!valueS.matches(field.getRegex())) {
-                    addMetaValidationError(meta, field.getName(), String.format("'%s' does not match '%s'", valueS, field.getRegex()));
-                }
-            }
-            // check charset
-            if (field.getCharset() != null) {
-                try {
-                    if (!Utils.isCharset(entry.getValue().toString().replace("€", ""), field.getCharset())) {
-                        addMetaValidationError(meta, entry.getKey(), String.format("'%s' not in charset %s", entry.getValue(), field.getCharset()));
-                    }
-                } catch (UnsupportedEncodingException e) {
-                    addMetaValidationError(meta, entry.getKey(), String.format("charset %s is not a known one", field.getCharset()));
+                    addMetaValidationError(meta, field.getName(), VALIDATION_TYPE.VALUE_REGEX, String.format("'%s' does not match '%s'", valueS, field.getRegex()));
                 }
             }
             if (entry.getValue() != null) {
+                // check charset
+                if (field.getCharset() != null) {
+                    try {
+                        // replace characters that are not included in the charsets
+                        if (!Utils.isCharset(entry.getValue().toString().replace("€", "").replace("΄", "").replace("’", ""), field.getCharset())) {
+                            addMetaValidationError(meta, entry.getKey(), VALIDATION_TYPE.VALUE_CHARSET, String.format("'%s' not in charset %s", entry.getValue(), field.getCharset()));
+                        }
+                    } catch (UnsupportedEncodingException e) {
+                        addMetaValidationError(meta, entry.getKey(), VALIDATION_TYPE.VALUE_CHARSET, String.format("charset %s is not a known one", field.getCharset()));
+                    }
+                }
                 // use the entry.key in case the field is not included in the model, otherwise the rest service returns list instead of map!!!
                 validateEntry(meta, field.getType(), field.getArrayType(), entry.getKey(), entry.getValue());
             }
         }
         // not for relations and virtual fields. Relations error are reported in _meta.RelationErrors
         model.getFields().stream()
-                .filter(field -> {
-                    return field.getRequired() && field.getRelation() == null && field.getVirtual() == null;
-                })
+                .filter(field -> field.getRequired() && field.getRelation() == null && field.getVirtual() == null)
                 .forEach(field -> {
                     if (document.get(field.getName()) == null) {
-                        addMetaValidationError(meta, field.getName(), "required value");
+                        addMetaValidationError(meta, field.getName(), VALIDATION_TYPE.REQUIRED, "required value");
                     }
                 });
         document.putIfAbsent("_meta", meta);
@@ -131,27 +155,27 @@ public class ModelUtils {
     private static void validateEntry(Meta meta, String type, String arrayType, String fieldName, Object value) {
         switch (type) {
             case Field.TYPE_MISSING:
-                addMetaValidationError(meta, fieldName, String.format("field %s is missing from the model", fieldName));
+                addMetaValidationError(meta, fieldName, VALIDATION_TYPE.MISSING_FROM_MODEL, String.format("field `%s` with value `%s` is missing from the model", fieldName, value));
                 break;
             case Field.TYPE_STRING:
                 if (!(value instanceof String)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not a string", value));
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_STRING, String.format("'%s' is not a string", value));
                 }
                 break;
             case Field.TYPE_BOOLEAN:
                 if (!(value instanceof Boolean)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not a boolean", value));
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_BOOLEAN, String.format("'%s' is not a boolean", value));
                 }
                 break;
             case Field.TYPE_DATE:
                 if (!(value instanceof Date)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not a date", value));
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_DATE, String.format("'%s' is not a date", value));
                 }
                 break;
             case Field.TYPE_JSON:
                 // on upload check for Map
                 if (!(value instanceof Map) && !(value instanceof Document)) {
-                    addMetaValidationError(meta, fieldName, "not json");
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_JSON, "not json");
                 }
                 break;
             case Field.TYPE_ARRAY:
@@ -162,52 +186,54 @@ public class ModelUtils {
                 }
                 break;
             case Field.TYPE_INTEGER:
-                if (!(value instanceof Integer) && !(value instanceof Long)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not an integer is of type %s", value, value.getClass().getSimpleName()));
+                if ((!(value instanceof Integer) && !(value instanceof Long) && !(value instanceof Decimal128))
+                        || (value instanceof Decimal128 && (((Decimal128) value).doubleValue() - ((Decimal128) value).intValue() != 0.0))
+                ) {
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_INTEGER, String.format("'%s' is not an integer is of type %s", value, value.getClass().getSimpleName()));
                 }
                 break;
             case Field.TYPE_DECIMAL:
                 if (!(value instanceof Decimal128) && !(value instanceof BigDecimal) && !(value instanceof Double)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not a decimal, is of type %s", value, value.getClass().getSimpleName()));
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_DECIMAL, String.format("'%s' is not a decimal, is of type %s", value, value.getClass().getSimpleName()));
                 }
                 break;
             case Field.TYPE_OID:
                 if (!(value instanceof ObjectId)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not of type oid", value));
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_OID, String.format("'%s' is not of type oid", value));
                 }
                 break;
             case Field.TYPE_CRON:
                 if (!(value instanceof String)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not a cron expression", value));
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_CRON, String.format("'%s' is not a cron expression", value));
                 } else {
                     if (!((String) value).matches(Constants.REGEX_CRON)) {
-                        addMetaValidationError(meta, fieldName, String.format("'%s' is not a cron expression", value));
+                        addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_CRON, String.format("'%s' is not a cron expression", value));
                     }
                 }
                 break;
             case Field.TYPE_EMAIL:
                 if (!((String) value).matches(Constants.REGEX_EMAIL)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not an email", value));
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_EMAIL, String.format("'%s' is not an email", value));
                 }
                 break;
             case Field.TYPE_PHONE:
                 if (!((String) value).matches(Constants.REGEX_PHONE)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not a phone", value));
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_PHONE, String.format("'%s' is not a phone", value));
                 }
                 break;
             case Field.TYPE_GEO_JSON:
                 // on upload check for Map
                 if (!(value instanceof Map) && !(value instanceof Document) && !((value) instanceof List)) {
-                    addMetaValidationError(meta, fieldName, String.format("'%s' is not a geoJson type", value));
+                    addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_GEO_JSON, String.format("'%s' is not a geoJson type", value));
                 }
                 if (value instanceof Map) {
                     Map<String, Object> entryEntry = (Map<String, Object>) value;
                     // e.g. { type: "Point", coordinates: [ 40, 5 ] }
                     if (entryEntry.get("type") == null) {
-                        addMetaValidationError(meta, fieldName, "geoJson is missing 'type'");
+                        addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_GEO_JSON, "geoJson is missing 'type'");
                     }
                     if (entryEntry.get("coordinates") == null) {
-                        addMetaValidationError(meta, fieldName, "geoJson is missing 'coordinates'");
+                        addMetaValidationError(meta, fieldName, VALIDATION_TYPE.TYPE_NOT_GEO_JSON, "geoJson is missing 'coordinates'");
                     }
                 }
                 break;
@@ -216,13 +242,13 @@ public class ModelUtils {
         }
     }
 
-    public static List<Document> findValidationChanges(MongoService mongoService, List<Document> documents, Model model, SecretProperties secretProperties) {
+    public static List<Document> findUploadResults(MongoService mongoService, List<Document> documents, Model model, SecretProperties secretProperties) {
         List<Field> idFields = findIdFields(model);
-        documents.forEach(document -> findValidationChanges(mongoService, document, model, idFields, secretProperties));
+        documents.forEach(document -> findUploadResults(mongoService, document, model, idFields, secretProperties));
         return documents;
     }
 
-    private static Document findValidationChanges(MongoService mongoService, Document document, Model model, List<Field> idFields, SecretProperties secretProperties) {
+    private static Document findUploadResults(MongoService mongoService, Document document, Model model, List<Field> idFields, SecretProperties secretProperties) {
         Meta meta = (Meta) document.get("_meta");
         if (meta == null) {
             meta = new Meta();
@@ -237,15 +263,16 @@ public class ModelUtils {
             Document old = mongoService.get(model.getCluster(), model.getDatabase(), model.getCollection(), new Document(documentIds), getOptions)
                     .collectItems().first().await().indefinitely();
             // decrypt secret2
+            Set<String> allKeys = new HashSet(document.keySet());
+            allKeys.remove("_meta");
             if (old == null) {
-                // do nothing
+                for (String key : allKeys) {
+                    Object newValue = document.get(key);
+                    addInsertUploadResult(meta, key, newValue == null ? "null" : newValue.getClass().getSimpleName() + ": '" + newValue + "'");
+                }
             } else {
                 decryptSecrets(old, model, secretProperties);
-                Set<String> allKeys = new HashSet();
                 allKeys.addAll(old.keySet());
-                allKeys.addAll(document.keySet());
-                allKeys.remove("_meta");
-
                 for (String key : allKeys) {
                     // old contains the field
                     Object newValue = document.get(key);
@@ -255,16 +282,12 @@ public class ModelUtils {
                     if (field.getIgnoreValidationChanges() || field.getVirtual() != null || field.getRelation() != null) {
                         // ignore the 'ignoreValidationChanges', 'virtual' and 'relation' ones
                     } else {
-                        if (field.getType().equals(Field.TYPE_INTEGER) || field.getType().equals(Field.TYPE_DECIMAL)) {
-                            equal = Objects.equals(oldValue == null ? null : oldValue.toString(), newValue == null ? null : newValue.toString());
-                        } else {
-                            equal = Objects.equals(oldValue, newValue);
-                        }
+                        equal = Objects.equals(oldValue, newValue);
                         if (!equal) {
                             if (field.getType().equals(Field.ENCRYPTION_SECRET1)) {
-                                addValidationChange(meta, key, "one way secrets are always changing when persisted");
+                                addUpdateUploadResult(meta, key, "one way secrets are always changing when persisted");
                             } else {
-                                addValidationChange(meta, key, String.format("old: %s <> new: %s",
+                                addUpdateUploadResult(meta, key, String.format("old: %s <> new: %s",
                                         oldValue == null ? "null" : oldValue.getClass().getSimpleName() + ": '" + oldValue + "'",
                                         newValue == null ? "null" : newValue.getClass().getSimpleName() + ": '" + newValue + "'"));
                             }
@@ -277,19 +300,28 @@ public class ModelUtils {
         return document;
     }
 
-    private static void addValidationChange(Meta meta, String fieldName, String message) {
-        if (meta.getValidationChanges() == null) {
-            meta.setValidationChanges(new HashMap());
+    private static void addInsertUploadResult(Meta meta, String fieldName, String message) {
+        if (meta.getUploadResults() == null) {
+            meta.setUploadResults(new HashMap<>());
         }
-        meta.getValidationChanges().put(fieldName, message);
+        meta.getUploadResults().computeIfAbsent(Meta.UPLOAD_RESULT.INSERT, k -> new HashMap<>());
+        meta.getUploadResults().get(Meta.UPLOAD_RESULT.INSERT).put(fieldName, message);
     }
 
-    private static void addMetaValidationError(Meta meta, String fieldName, String error) {
+    private static void addUpdateUploadResult(Meta meta, String fieldName, String message) {
+        if (meta.getUploadResults() == null) {
+            meta.setUploadResults(new HashMap<>());
+        }
+        meta.getUploadResults().computeIfAbsent(Meta.UPLOAD_RESULT.UPDATE, k -> new HashMap<>());
+        meta.getUploadResults().get(Meta.UPLOAD_RESULT.UPDATE).put(fieldName, message);
+    }
+
+    private static void addMetaValidationError(Meta meta, String fieldName, VALIDATION_TYPE validationType, String error) {
         if (meta.getValidationErrors() == null) {
-            meta.setValidationErrors(new HashMap<String, List<String>>());
+            meta.setValidationErrors(new HashMap<>());
         }
         List<String> fieldErrors = meta.getValidationErrors().computeIfAbsent(fieldName, k -> new ArrayList<>());
-        fieldErrors.add(error);
+        fieldErrors.add(String.format("%s: %s", validationType, error));
     }
 
     private static String toQuery(Object object) {
@@ -381,7 +413,7 @@ public class ModelUtils {
 
     private static void addMetaRelationError(Meta meta, String fieldName, String error) {
         if (meta.getRelationErrors() == null) {
-            meta.setRelationErrors(new HashMap<String, List<String>>());
+            meta.setRelationErrors(new HashMap<>());
         }
         List<String> fieldErrors = meta.getRelationErrors().computeIfAbsent(fieldName, k -> new ArrayList<>());
         fieldErrors.add(error);
@@ -407,9 +439,8 @@ public class ModelUtils {
         return object;
     }
 
-    public static Document toWire(Document document, Model model) {
+    public static Document toWire(Document document) {
         for (Map.Entry<String, Object> entry : document.entrySet()) {
-            Field field = ModelUtils.findField(model, entry.getKey());
             entry.setValue(toWire(entry.getValue()));
         }
         return document;
@@ -437,15 +468,19 @@ public class ModelUtils {
         return object;
     }
 
-    public static Document encryptSecrets(Document document, Model model, SecretProperties secretProperties) {
-        for (Map.Entry<String, Object> entry : document.entrySet()) {
-            Field field = ModelUtils.findField(model, entry.getKey());
-            entry.setValue(encryptSecrets(field, entry.getValue(), secretProperties));
-        }
-        return document;
+    public static List<Document> encryptSecrets(List<Document> documents, Model model, SecretProperties secretProperties) {
+        documents.forEach(document -> encryptSecrets(document, model, secretProperties));
+        return documents;
     }
 
-    private static Object encryptSecrets(Field field, Object value, SecretProperties secretProperties) {
+    public static void encryptSecrets(Document document, Model model, SecretProperties secretProperties) {
+        for (Map.Entry<String, Object> entry : document.entrySet()) {
+            Field field = ModelUtils.findField(model, entry.getKey());
+            entry.setValue(getEncryptedSecret(field, entry.getValue(), secretProperties));
+        }
+    }
+
+    private static Object getEncryptedSecret(Field field, Object value, SecretProperties secretProperties) {
         Object result = value;
         if (field.getEncryption() != null && value != null) {
             switch (field.getEncryption()) {
@@ -460,7 +495,14 @@ public class ModelUtils {
         return result;
     }
 
-    public static Document fromWire(Document document, Model model) {
+    @Deprecated
+    public static List<Document> _fromWire(List<Document> documents, Model model) {
+        documents.forEach(document -> _fromWire(document, model));
+        return documents;
+    }
+
+    @Deprecated
+    public static Document _fromWire(Document document, Model model) {
         if (document != null) {
             for (Map.Entry<String, Object> entry : document.entrySet()) {
                 Field field = ModelUtils.findField(model, entry.getKey());
@@ -518,14 +560,19 @@ public class ModelUtils {
         return result;
     }
 
-    public static Document applySystemFields(String httpMethod, Document data, Model model) {
+    public static List<Document> applySystemFields(String httpMethod, List<Document> documents, Model model) {
+        documents.forEach(document -> applySystemFields(httpMethod, document, model));
+        return documents;
+    }
+
+    public static void applySystemFields(String httpMethod, Document document, Model model) {
         switch (httpMethod) {
             case HttpMethod.POST:
                 Optional.ofNullable(model.getSystemFields())
                         .map(List::stream)
                         .ifPresent(systemFieldStream -> systemFieldStream
                                 .filter(systemField -> SystemField.TYPE_POST_DATE.equals(systemField.getType()))
-                                .forEach(systemField -> data.put(systemField.getName(), new Date()))
+                                .forEach(systemField -> document.put(systemField.getName(), new Date()))
                         );
                 break;
             case HttpMethod.PUT:
@@ -534,10 +581,40 @@ public class ModelUtils {
                         .map(List::stream)
                         .ifPresent(systemFieldStream -> systemFieldStream
                                 .filter(systemField -> SystemField.TYPE_PUT_PATCH_DATE.equals(systemField.getType()))
-                                .forEach(systemField -> data.put(systemField.getName(), new Date()))
+                                .forEach(systemField -> document.put(systemField.getName(), new Date()))
                         );
                 break;
+            default:
+                throw new IllegalArgumentException(String.format("HTTP Method `%s` not supported", httpMethod));
         }
-        return data;
+    }
+
+    public static Document getNormalizedDocument(Document document, Model model) {
+        Document normal = (Document) Document.parse("{'k' : " + document.toJson() + "}").get("k");
+        // fix numbers and decimals according to model
+        normal.entrySet().forEach(entry -> {
+            Field field = findField(model, entry.getKey());
+            switch (field.getType()) {
+                case Field.TYPE_INTEGER:
+                    // try to set it as integer
+                    try {
+                        entry.setValue(Integer.parseInt(entry.getValue().toString()));
+                    } catch (NumberFormatException e) {
+                        // ignore the change
+                        log.debug("Cannot parse Integer", e);
+                    }
+                    break;
+                case Field.TYPE_DECIMAL:
+                    // try to set it as BigDecimal
+                    try {
+                        entry.setValue((new BigDecimal(entry.getValue().toString())));
+                    } catch (NumberFormatException e) {
+                        // ignore the change
+                        log.debug("Cannot parse BigDecimal", e);
+                    }
+                    break;
+            }
+        });
+        return normal;
     }
 }

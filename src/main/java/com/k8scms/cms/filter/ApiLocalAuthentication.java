@@ -45,7 +45,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
-
 @Provider
 @Priority(Priorities.AUTHENTICATION)
 @ApiLocalAuthenticationFilter
@@ -93,41 +92,45 @@ public class ApiLocalAuthentication implements ContainerRequestFilter {
         } else {
             Cookie uidCookie = containerRequestContext.getCookies().get(Constants.COOKIE_UID);
             String[] tokens = null;
-            if (uidCookie != null) {
+            if (uidCookie == null) {
+                throw Utils.generateUnauthorizedException("Cookie is missing or expired", cmsProperties.getEnv());
+            } else {
                 String uid = uidCookie.getValue();
-                if (uid != null) {
+                if (uid == null) {
+                    throw Utils.generateUnauthorizedException("Cookie value is missing", cmsProperties.getEnv());
+                } else {
                     uid = new String(Base64.getDecoder().decode(uid));
                     tokens = uid.split("\\.");
+                    if (tokens.length != 3) {
+                        throw Utils.generateUnauthorizedException("Invalid cookie, tokens are not 3", cmsProperties.getEnv());
+                    } else {
+                        String random = tokens[0];
+                        String encryptedUser = tokens[1];
+                        Date loginDate = new Date(Long.parseLong(tokens[2]));
+                        // no need for this, cookie's age will do its job
+                        if (new Date().getTime()
+                                - loginDate.getTime() > secretProperties.getSessionTimeout() * 1000) {
+                            throw Utils.generateUnauthorizedException("Cookie timed out", cmsProperties.getEnv());
+                        }
+                        Document decryptedUser = Document.parse(Utils.decrypt2(encryptedUser, secretProperties.getSessionEncryptionKey() + "." + random));
+                        logger.trace("Decrypted user from cookie: {}", decryptedUser);
+                        GetOptions getOptions = new GetOptions();
+                        getOptions.setLimit(1);
+                        Document user = mongoService.get(
+                                cmsProperties.getCluster(),
+                                cmsProperties.getDatabase(),
+                                cmsProperties.getCollectionUser(),
+                                Utils.getUserFilter(decryptedUser.getString("name")),
+                                getOptions)
+                                .toUni()
+                                .await()
+                                .indefinitely();
+                        if (user == null) {
+                            throw Utils.generateUnauthorizedException(String.format("User %s not found in %s.%s.%s", decryptedUser.get("name"), cmsProperties.getCluster(), cmsProperties.getDatabase(), cmsProperties.getCollectionUser()), cmsProperties.getEnv());
+                        }
+                        initContext(user, containerRequestContext);
+                    }
                 }
-            }
-            if (tokens == null || tokens.length != 3) {
-                throw Utils.generateUnauthorizedException("Invalid cookie, tokens are not 3", cmsProperties.getEnv());
-            } else {
-                String random = tokens[0];
-                String encryptedUser = tokens[1];
-                Date loginDate = new Date(Long.parseLong(tokens[2]));
-                // no need for this, cookie's age will do its job
-                if (new Date().getTime()
-                        - loginDate.getTime() > secretProperties.getSessionTimeout() * 1000) {
-                    throw Utils.generateUnauthorizedException("Cookie timed out", cmsProperties.getEnv());
-                }
-                Document decryptedUser = Document.parse(Utils.decrypt2(encryptedUser, secretProperties.getSessionEncryptionKey() + "." + random));
-                logger.trace("Decrypted user from cookie: {}", decryptedUser);
-                GetOptions getOptions = new GetOptions();
-                getOptions.setLimit(1);
-                Document user = mongoService.get(
-                        cmsProperties.getCluster(),
-                        cmsProperties.getDatabase(),
-                        cmsProperties.getCollectionUser(),
-                        Utils.getUserFilter(decryptedUser.getString("name")),
-                        getOptions)
-                        .toUni()
-                        .await()
-                        .indefinitely();
-                if (user == null) {
-                    throw Utils.generateUnauthorizedException(String.format("User %s not found in %s.%s.%s", decryptedUser.get("name"), cmsProperties.getCluster(), cmsProperties.getDatabase(), cmsProperties.getCollectionUser()), cmsProperties.getEnv());
-                }
-                initContext(user, containerRequestContext);
             }
         }
     }

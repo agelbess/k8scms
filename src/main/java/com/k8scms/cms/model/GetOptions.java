@@ -1,8 +1,6 @@
 /*
  * MIT License
- *
  * Copyright (c) 2020 Alexandros Gelbessis
- *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -20,7 +18,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
- *
  */
 
 package com.k8scms.cms.model;
@@ -30,6 +27,7 @@ public class GetOptions {
     private Integer sortDirection;
     private Integer limit;
     private Integer skip;
+    private boolean noLimit;
 
     public String getSort() {
         return sort;
@@ -61,5 +59,13 @@ public class GetOptions {
 
     public void setSkip(Integer skip) {
         this.skip = skip;
+    }
+
+    public Boolean getNoLimit() {
+        return noLimit;
+    }
+
+    public void setNoLimit(Boolean noLimit) {
+        this.noLimit = noLimit;
     }
 }

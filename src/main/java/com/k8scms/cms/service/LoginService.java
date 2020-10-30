@@ -36,6 +36,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.ws.rs.HttpMethod;
 import java.util.Arrays;
+import java.util.Collections;
 
 @ApplicationScoped
 public class LoginService {
@@ -122,7 +123,8 @@ public class LoginService {
                 cmsProperties.getCluster(),
                 cmsProperties.getDatabase(),
                 cmsProperties.getCollectionUser(),
-                user)
+                Collections.singletonList(user),
+                true)
                 .await()
                 .indefinitely();
         return user;

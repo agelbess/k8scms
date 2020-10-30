@@ -25,7 +25,9 @@ package com.k8scms.cms.service;
 import com.k8scms.cms.CmsProperties;
 import com.k8scms.cms.Constants;
 import com.k8scms.cms.mongo.MongoService;
+import com.k8scms.cms.resource.DataFilter;
 import com.k8scms.cms.utils.Utils;
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.model.IndexOptions;
 import io.quarkus.runtime.StartupEvent;
 import org.bson.Document;
@@ -39,6 +41,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -84,24 +87,23 @@ public class AppLifecycle {
                             String modelText = String.join("", readAllLines(path));
                             String replaceProperties = Utils.replaceProperties(modelText);
                             Document model = Document.parse(replaceProperties);
-                            log.debug("Start upserting");
-                            String cluster = model.getString("cluster");
-                            String database = model.getString("database");
-                            String collection = model.getString("collection");
-                            log.debug("Upserting model {}:{}:{}",
-                                    cluster,
-                                    database,
-                                    collection);
-                            mongoService.put(
+                            Document filter = new Document()
+                                    .append("cluster", model.get("cluster"))
+                                    .append("database", model.get("database"))
+                                    .append("collection", model.get("collection"));
+                            DataFilter dataFilter = new DataFilter();
+                            dataFilter.setFilter(filter);
+                            dataFilter.setData(model);
+                            BulkWriteResult bulkWriteResult = mongoService.put(
                                     cmsProperties.getCluster(),
                                     cmsProperties.getDatabase(),
                                     cmsProperties.getCollectionModel(),
-                                    new Document("cluster", cluster)
-                                            .append("database", database)
-                                            .append("collection", collection),
-                                    model,
+                                    Collections.singletonList(dataFilter),
+                                    true,
                                     true
                             ).await().indefinitely();
+                            // since we use put, only upsert (no insert)
+                            log.info("{} inserted: {}, modified: {}", model.getString("name"), bulkWriteResult.getUpserts().size(), bulkWriteResult.getModifiedCount());
                         } catch (IOException e) {
                             throw new RuntimeException("could not read model file", e);
                         }
