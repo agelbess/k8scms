@@ -368,7 +368,7 @@ Logs
 
 Download excel
 
-![log](/assets/screenshot/k8sscms_download_excel.png)
+![log](/assets/screenshot/k8scms_download_excel.png)
 
 ## TODO
 
