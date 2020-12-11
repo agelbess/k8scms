@@ -344,31 +344,31 @@ Sample query
 
 The `cms.user` table
 
-![cms.user table](/assets/screenshot/cms_user.png)
+![cms.user table](/assets/screenshot/k8scms_user.png)
 
 The upload page with the pre-persist validation
 
-![upload](/assets/screenshot/cms_upload.png)
+![upload](/assets/screenshot/k8scms_upload.png)
 
 Pagination, sorting and querying
 
-![pagination validation quering](/assets/screenshot/cms_query_sort_pagination.png)
+![pagination validation quering](/assets/screenshot/k8scms_query_sort_pagination.png)
 
 Data validations and JSON view
 
-![validation and JSON](/assets/screenshot/cms_validations_json.png)
+![validation and JSON](/assets/screenshot/k8scms_validations_json.png)
 
 Drawer
 
-![drawer](/assets/screenshot/cms_model_drawer.png)
+![drawer](/assets/screenshot/k8scms_model_drawer.png)
 
 Logs
 
-![log](/assets/screenshot/cms_log.png)
+![log](/assets/screenshot/k8scms_log.png)
 
 Download excel
 
-![log](/assets/screenshot/cms_download_excel.png)
+![log](/assets/screenshot/k89scms_download_excel.png)
 
 ## TODO
 
