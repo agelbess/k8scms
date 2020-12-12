@@ -22,7 +22,7 @@ Written entirely in Java 11.
 
 The UI looks like that.
 
-![overview](/assets/screenshot/cms_overview.png)
+![overview](/assets/screenshot/k8scms_overview.png)
 
 ## Getting started
 
