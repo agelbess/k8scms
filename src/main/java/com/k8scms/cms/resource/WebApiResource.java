@@ -202,7 +202,7 @@ public class WebApiResource {
 
     public NewCookie generateUIDCookie(Document user) {
         String random = UUID.randomUUID().toString();
-        // The value is random.encuptedUsername.timestamp
+        // The value is random.encryptedUsername.timestamp
         String value = String.format("%s.%s.%s",
                 random,
                 Utils.encrypt2(user.toJson(), secretProperties.getSessionEncryptionKey() + "." + random),
