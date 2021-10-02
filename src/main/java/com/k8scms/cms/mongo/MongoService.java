@@ -160,6 +160,8 @@ public class MongoService {
     public Uni<BulkWriteResult> put(String cluster, String database, String collection, List<DataFilter> dataFilters, boolean upsert, boolean ordered) {
         List<ReplaceOneModel<Document>> replaceOneModels = new ArrayList<>();
         dataFilters.forEach(dataFilter -> {
+            // never change _id(s)
+            dataFilter.getData().remove("_id");
             ReplaceOneModel<Document> replaceOneModel = new ReplaceOneModel<>(dataFilter.getFilter(), dataFilter.getData(), new ReplaceOptions().upsert(upsert));
             replaceOneModels.add(replaceOneModel);
         });

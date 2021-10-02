@@ -96,7 +96,7 @@
                     dataType: 'json',
                     url: `/api/${model.cluster}/${model.database}/${model.collection}`,
                     // TODO is stringify needed?
-                    data: JSON.stringify(data),
+                    data: JSON.stringify([data]),
                     error: $.cms.utils.ajaxError
                 })
             }
@@ -120,8 +120,8 @@
                 return $.ajax({
                     type: 'PUT',
                     contentType: 'application/json',
-                    url: `/api/${model.cluster}/${model.database}/${model.collection}?${$.param(filter)}`,
-                    data: JSON.stringify(data),
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}`,
+                    data: JSON.stringify([{data, filter}]),
                     error: $.cms.utils.ajaxError
                 })
             }
@@ -130,8 +130,8 @@
                 return $.ajax({
                     type: 'PATCH',
                     contentType: 'application/json',
-                    url: `/api/${model.cluster}/${model.database}/${model.collection}?${$.param(filter)}`,
-                    data: JSON.stringify(data),
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}`,
+                    data: JSON.stringify([{data, filter}]),
                     error: $.cms.utils.ajaxError
                 })
             }
@@ -140,7 +140,8 @@
                 return $.ajax({
                     type: 'DELETE',
                     contentType: 'application/json',
-                    url: `/api/${model.cluster}/${model.database}/${model.collection}?${$.param(filter)}`,
+                    url: `/api/${model.cluster}/${model.database}/${model.collection}`,
+                    data: JSON.stringify([{filter}]),
                     error: $.cms.utils.ajaxError
                 })
             }
